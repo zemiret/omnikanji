@@ -19,10 +19,16 @@
 
 <section>
     <h1>Jisho</h1>
+
+    {{.JishoWord}}
 </section>
 
 <section>
     <h1>Kanjidamage</h1>
+
+    {{ range .KanjidmgSections }}
+        {{ . }}
+    {{ end }}
 </section>
 
 </body>
