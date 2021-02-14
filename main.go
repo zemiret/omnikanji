@@ -21,9 +21,51 @@ const (
 )
 
 type TemplateParams struct {
-	JishoWord        string
-	JishoKanjis      []string
-	KanjidmgSections []string
+	Jisho    *JishoSection
+	Kanjidmg []*KanjidmgSection
+}
+
+type KanjidmgSection struct {
+	Kanji      KanjidmgKanji
+	TopComment *string
+	Radicals   []KanjidmgKanji
+	Onyomi     *string
+	Mnemonic   *string
+
+	// Kunyomi TODO
+	//Jukugo  TODO
+	// UsedIn TODO
+	// Synonyms TODO
+	// Lookalikes TODO
+}
+
+type KanjidmgKanji struct {
+	Kanji   string
+	Meaning string
+	Link    string
+}
+
+type JishoSection struct {
+	Link   string
+	Word   JishoWord
+	Kanjis []JishoKanji
+}
+
+type JishoWord struct {
+	Word     string
+	Reading  string
+	Meanings []JishoMeaning
+	//Notes *string
+}
+
+type JishoMeaning struct {
+	Meaning     string
+	MeaningTags *string
+	//MeaningSentence  *string
+	//SupplementalInfo *string
+}
+
+type JishoKanji struct {
 }
 
 // TODO: Change back to using structures (don't be a dumbass allowing for html injection)
@@ -103,19 +145,21 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 	// TODO: Split search if it's kana (do not do kanjidamage then)
 
 	resp, err := doJishoRequest(word)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		log.Println("Error doing jisho request: ", err.Error())
 		return
 	}
-	defer resp.Body.Close()
 
 	jishoSection, err := parseJishoResponse(resp)
 	if err != nil {
 		log.Println("Error parsing jisho response: ", err.Error())
 		return
 	}
-
-	tParams.JishoWord = jishoSection
+	jishoSection.Link = jishoUrl(word)
+	tParams.Jisho = jishoSection
 
 	for _, c := range word {
 		log.Printf("getting kanjidmg: %c\n", c)
@@ -125,44 +169,66 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		tParams.KanjidmgSections = append(tParams.KanjidmgSections, sect)
+		tParams.Kanjidmg = append(tParams.Kanjidmg, sect)
 	}
 
 	renderTemplate(w, &tParams)
 }
 
-func getKanjidmgSection(kanji rune) (string, error) {
-	url, ok := kanjidmgLinks[string(kanji)]
-	if !ok {
-		return "", errors.New("kanji does not exist at kanjidamage")
+func doKanjidmgRequest(kanji rune) (*http.Response, error) {
+	url := kanjidmgUrl(string(kanji))
+	if url == "" {
+		return nil, errors.New("kanji does not exist at kanjidamage")
 	}
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("kanjidamage kanji search tatus code: %d", resp.StatusCode)
+		return resp, fmt.Errorf("kanjidamage kanji search tatus code: %d", resp.StatusCode)
+	}
+
+	return resp, nil
+}
+
+func getKanjidmgSection(kanji rune) (*KanjidmgSection, error) {
+	resp, err := doKanjidmgRequest(kanji)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	body := doc.Find("body")
+	sect := &KanjidmgSection{}
+	rows := doc.Find(".container").Last().Find(".row")
 
-	body = sanitizeSelection(body)
-	body.Find(".navbar").Remove()
-	body.Find("footer").Remove()
+	kanjiRow := rows.Eq(2)
+	meaningRow := rows.Eq(3)
 
-	return body.Html()
+	// TODO: HANDLING KANJIS THAT ARE IMAGES NOT TEXT0
+	if kanjiRow != nil {
+		sect.Kanji.Kanji = kanjiRow.Find("h1 .kanji_character").Text()
+		sect.Kanji.Meaning = kanjiRow.Find("h1 .translation").Text()
+		sect.Kanji.Link = kanjidmgUrl(string(kanji))
+
+		kanjiRow.Find(".component").Each(func(_ int, el *goquery.Selection) {
+
+		})
+	}
+
+	return sect, nil
 }
 
 func doJishoRequest(word string) (*http.Response, error) {
-	resp, err := http.Get(jishoSearchUrl + word)
+	resp, err := http.Get(jishoUrl(word))
 	if err != nil {
 		return nil, err
 	}
@@ -174,17 +240,46 @@ func doJishoRequest(word string) (*http.Response, error) {
 	return resp, nil
 }
 
-func parseJishoResponse(resp *http.Response) (string, error) {
+func parseJishoResponse(resp *http.Response) (*JishoSection, error) {
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+	var jishoWord JishoWord
+	wordSection := doc.Find(".concept_light").First()
 
-	body := sanitizeSelection(doc.Find("body"))
-	return body.Find(".concept_light").First().Html()
+	readingSection := wordSection.Find(".concept_light-wrapper .concept_light-readings").First()
+	jishoWord.Word = strings.TrimSpace(readingSection.Find(".text").Text())
+	jishoWord.Reading = strings.TrimSpace(readingSection.Find(".furigana").Text())
+
+	meaningSection := wordSection.Find(".meanings-wrapper").First()
+
+	lastTag := ""
+	meaningSection.Children().Each(func(_ int, el *goquery.Selection) {
+		if el.HasClass("meaning-tags") {
+			lastTag = strings.TrimSpace(el.Text())
+		} else if el.HasClass("meaning-wrapper") {
+			var jishoMeaning JishoMeaning
+			jishoMeaning.Meaning = strings.TrimSpace(el.Find(".meaning-meaning").Text())
+			if lastTag != "" {
+				t := lastTag
+				jishoMeaning.MeaningTags = &t
+			}
+			jishoWord.Meanings = append(jishoWord.Meanings, jishoMeaning)
+			lastTag = ""
+		}
+	})
+
+	return &JishoSection{
+		Word:   jishoWord,
+		Kanjis: nil, // TODO: Kanjis
+	}, nil
 }
 
-func sanitizeSelection(sel *goquery.Selection) *goquery.Selection {
-	sel.Find("script").Remove()
-	return sel
+func jishoUrl(word string) string {
+	return jishoSearchUrl + word
+}
+
+func kanjidmgUrl(kanji string) string {
+	return kanjidmgLinks[kanji]
 }
