@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/zemiret/omnikanji/ptr"
 	"html/template"
 	"log"
 	"net/http"
@@ -172,6 +173,12 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 		tParams.Kanjidmg = append(tParams.Kanjidmg, sect)
 	}
 
+	log.Println("TEMPLATE PARAMS JISHO: ")
+	log.Printf("%+v\n", tParams.Jisho)
+
+	log.Println("TEMPLATE PARAMS KANJIDMG: ")
+	log.Printf("%+v\n", tParams.Kanjidmg[0])
+
 	renderTemplate(w, &tParams)
 }
 
@@ -210,8 +217,7 @@ func getKanjidmgSection(kanji rune) (*KanjidmgSection, error) {
 	sect := &KanjidmgSection{}
 	rows := doc.Find(".container").Last().Find(".row")
 
-	kanjiRow := rows.Eq(2)
-	meaningRow := rows.Eq(3)
+	kanjiRow := rows.Eq(1)
 
 	// TODO: HANDLING KANJIS THAT ARE IMAGES NOT TEXT0
 	if kanjiRow != nil {
@@ -219,10 +225,39 @@ func getKanjidmgSection(kanji rune) (*KanjidmgSection, error) {
 		sect.Kanji.Meaning = kanjiRow.Find("h1 .translation").Text()
 		sect.Kanji.Link = kanjidmgUrl(string(kanji))
 
-		kanjiRow.Find(".component").Each(func(_ int, el *goquery.Selection) {
+		kanjiRow.Find("h1").Remove()
 
+		radicalSection := kanjiRow.Find("div.span8")
+		radicalLinks := radicalSection.Find("a")
+
+		usedLinks := 0
+		radicalSection.Contents().Not("a").Each(func (_ int, m *goquery.Selection) {
+			meaningText := m.Text() // TODO: text cleanup
+			if strings.TrimSpace(meaningText) != "" {
+				log.Println("Meaning:  ", meaningText)
+
+				sect.Radicals = append(sect.Radicals, KanjidmgKanji{
+					Kanji:   radicalLinks.Eq(usedLinks).Text(),
+					Meaning: m.Text(),
+					Link:    radicalLinks.Eq(usedLinks).AttrOr("href", ""),
+				})
+				usedLinks += 1
+			}
 		})
+	} else {
+		log.Println("Kanjidmg: Kanji row is nil :/")
 	}
+
+	sectionsRow := rows.Eq(2)
+	if sectionsRow != nil {
+		definitions := sectionsRow.Find(".definition")
+		sect.Onyomi = ptr.String(definitions.Eq(1).Text())
+		sect.Mnemonic = ptr.String(definitions.Eq(2).Text())
+	} else {
+		log.Println("Kanjidmg: sections row is nil :/")
+	}
+
+	// TODO: Top comment
 
 	return sect, nil
 }
@@ -283,3 +318,4 @@ func jishoUrl(word string) string {
 func kanjidmgUrl(kanji string) string {
 	return kanjidmgLinks[kanji]
 }
+
