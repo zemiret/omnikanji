@@ -22,13 +22,13 @@
 <section>
     <h1>Jisho</h1>
 
-    <a href="{{.Jisho.Link}}">{{.Jisho.Word.Word}} at jisho.org</a>
+    <a href="{{.Jisho.Link}}">{{.Jisho.WordSection.Word}} at jisho.org</a>
 
-    <h1>{{.Jisho.Word.Word}}</h1>
-    <h3>{{.Jisho.Word.Reading}}</h3>
+    <h1>{{.Jisho.WordSection.Word}}</h1>
+    <h3>{{.Jisho.WordSection.Reading}}</h3>
 
     <ol>
-        {{ range $idx, $m := .Jisho.Word.Meanings }}
+        {{ range $idx, $m := .Jisho.WordSection.Meanings }}
         <li>
             <h4>{{$m.Meaning}}</h4>
             {{ if $m.Tags }}
@@ -46,9 +46,11 @@
     <h1>Kanjidamage</h1>
 
     {{ range $idx, $sect := .Kanjidmg }}
-    <a href="{{$sect.Kanji.Link}}">{{$sect.Kanji.Kanji}} at kanjidamage.com</a>
+    <a href="{{$sect.WordSection.Link}}">{{$sect.WordSection.Kanji}} at kanjidamage.com</a>
 
-    <h1>{{$sect.Kanji.Kanji}}</h1>
+    <h1>{{$sect.WordSection.Kanji}}</h1>
+    <span>{{$sect.WordSection.Meaning}}</span>
+
     <ol>
         {{ range $jdx, $radical := $sect.Radicals }}
         <li>
