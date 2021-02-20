@@ -32,6 +32,9 @@ type KanjidmgSection struct {
 	Radicals   []KanjidmgKanji
 	Onyomi     *string
 	Mnemonic   *string
+	Mutants    []KanjidmgKanji
+
+	// TODO: Sections find by text (e.g. Onyomi), some pages have different sections
 
 	// Kunyomi TODO
 	//Jukugo  TODO
@@ -60,8 +63,8 @@ type JishoWord struct {
 }
 
 type JishoMeaning struct {
-	Meaning     string
-	MeaningTags *string
+	Meaning string
+	Tags    *string
 	//MeaningSentence  *string
 	//SupplementalInfo *string
 }
@@ -231,7 +234,7 @@ func getKanjidmgSection(kanji rune) (*KanjidmgSection, error) {
 		radicalLinks := radicalSection.Find("a")
 
 		usedLinks := 0
-		radicalSection.Contents().Not("a").Each(func (_ int, m *goquery.Selection) {
+		radicalSection.Contents().Not("a").Each(func(_ int, m *goquery.Selection) {
 			meaningText := m.Text() // TODO: text cleanup
 			if strings.TrimSpace(meaningText) != "" {
 				log.Println("Meaning:  ", meaningText)
@@ -250,9 +253,8 @@ func getKanjidmgSection(kanji rune) (*KanjidmgSection, error) {
 
 	sectionsRow := rows.Eq(2)
 	if sectionsRow != nil {
-		definitions := sectionsRow.Find(".definition")
-		sect.Onyomi = ptr.String(definitions.Eq(1).Text())
-		sect.Mnemonic = ptr.String(definitions.Eq(2).Text())
+		sect.Onyomi = ptr.String(sectionsRow.Find("h2:contains(\"Onyomi\")").Next().Text())
+		sect.Mnemonic = ptr.String(sectionsRow.Find("h2:contains(\"Mnemonic\")").Next().Text())
 	} else {
 		log.Println("Kanjidmg: sections row is nil :/")
 	}
@@ -298,7 +300,7 @@ func parseJishoResponse(resp *http.Response) (*JishoSection, error) {
 			jishoMeaning.Meaning = strings.TrimSpace(el.Find(".meaning-meaning").Text())
 			if lastTag != "" {
 				t := lastTag
-				jishoMeaning.MeaningTags = &t
+				jishoMeaning.Tags = &t
 			}
 			jishoWord.Meanings = append(jishoWord.Meanings, jishoMeaning)
 			lastTag = ""
@@ -318,4 +320,3 @@ func jishoUrl(word string) string {
 func kanjidmgUrl(kanji string) string {
 	return kanjidmgLinks[kanji]
 }
-

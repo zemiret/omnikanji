@@ -3,7 +3,7 @@
 <html>
 <head>
     <title>Omnikanji</title>
-    <meta charset="utf-8" />
+    <meta charset="utf-8"/>
 </head>
 <body>
 
@@ -12,24 +12,63 @@
         <label for="word-input">
             Word
         </label>
-        <input name="word" id="word-input" type="text" placeholder="言葉" value="何" />
+        <input name="word" id="word-input" type="text" placeholder="言葉" value="何"/>
         <input type="submit"/>
     </form>
 </section>
 
+{{ if . }}
+{{ if .Jisho }}
 <section>
     <h1>Jisho</h1>
 
-    {{.Jisho.Word}}
-</section>
+    <a href="{{.Jisho.Link}}">{{.Jisho.Word.Word}} at jisho.org</a>
 
+    <h1>{{.Jisho.Word.Word}}</h1>
+    <h3>{{.Jisho.Word.Reading}}</h3>
+
+    <ol>
+        {{ range $idx, $m := .Jisho.Word.Meanings }}
+        <li>
+            <h4>{{$m.Meaning}}</h4>
+            {{ if $m.Tags }}
+            <span>{{ $m.Tags }}</span>
+            {{ end }}
+        </li>
+        {{ end }}
+    </ol>
+
+</section>
+{{ end }}
+
+{{ if .Kanjidmg }}
 <section>
     <h1>Kanjidamage</h1>
 
-    {{ range .Kanjidmg }}
-        {{ . }}
+    {{ range $idx, $sect := .Kanjidmg }}
+    <a href="{{$sect.Kanji.Link}}">{{$sect.Kanji.Kanji}} at kanjidamage.com</a>
+
+    <h1>{{$sect.Kanji.Kanji}}</h1>
+    <ol>
+        {{ range $jdx, $radical := $sect.Radicals }}
+        <li>
+            <a href="{{$radical.Link}}">
+                <span>{{$radical.Kanji}} {{$radical.Meaning}}</span>
+            </a>
+        </li>
+        {{ end }}
+    </ol>
+
+    <h2>Mnemonic</h2>
+    <h3>{{$sect.Mnemonic}}</h3>
+
+    <h2>Onyomi</h2>
+    <h3>{{$sect.Onyomi}}</h3>
+
     {{ end }}
 </section>
+{{ end }}
+{{ end }}
 
 </body>
 </html>
