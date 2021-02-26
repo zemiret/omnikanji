@@ -55,7 +55,14 @@
         {{ range $jdx, $radical := $sect.Radicals }}
         <li>
             <a href="{{$radical.Link}}">
+                {{ if $radical.Kanji }}
                 <span>{{$radical.Kanji}} {{$radical.Meaning}}</span>
+                {{ else if $radical.KanjiImage }}
+                <span>
+                    <img alt="{{$radical.Meaning}}" src="data:image/png;base64,{{$radical.KanjiImage}}"/>
+                    {{$radical.Meaning}}
+                </span>
+                {{ end }}
             </a>
         </li>
         {{ end }}
