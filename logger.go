@@ -5,7 +5,13 @@ import (
 )
 
 type Logger struct {
-	log.Logger
+	*log.Logger
+}
+
+func NewLogger() *Logger {
+	return &Logger{
+		Logger: log.Default(),
+	}
 }
 
 func (lo *Logger) Errorf(err error, format string, v ...interface{}) {

@@ -6,8 +6,9 @@ import (
 	"strings"
 )
 
+
 type server struct {
-	Logger
+	*Logger
 	kanjidmgLinks map[string]string
 	jisho         *JishoHandler
 	kanjidmg      *KanjidmgHandler
@@ -17,12 +18,14 @@ func newServer(jisho *JishoHandler, kanjidmg *KanjidmgHandler) *server {
 	return &server{
 		jisho:    jisho,
 		kanjidmg: kanjidmg,
+		Logger:   NewLogger(),
 	}
 }
 
 type TemplateParams struct {
 	Jisho    *JishoSection
 	Kanjidmg []*KanjidmgSection
+	Error    *string
 }
 
 func (s *server) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -41,8 +44,12 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !IsJapaneseWord(word) {
+		s.renderTemplate(w, s.errorParams("IT'S NOT JAPANESE YOU MORON :|"))
+		return
+	}
+
 	log.Println("Gonna search for: " + word)
-	// TODO: Validation if it's in japanese
 	// TODO: Split search if it's kana (do not do kanjidamage then)
 
 	s.renderTemplate(w, s.getSections(word))
@@ -69,6 +76,10 @@ func (s *server) getSections(word string) *TemplateParams {
 	}
 
 	return &tParams
+}
+
+func (s *server) errorParams(msg string) *TemplateParams {
+	return &TemplateParams{Error: &msg}
 }
 
 func (s *server) renderTemplate(w http.ResponseWriter, data *TemplateParams) {
