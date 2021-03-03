@@ -52,6 +52,9 @@ func (h *JishoHandler) GetSection(word string) (*JishoSection, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing: %w", err)
 	}
+	if sect == nil {
+		return nil, nil
+	}
 	sect.Link = url
 
 	return sect, nil
@@ -70,6 +73,9 @@ func (h *JishoHandler) parseResponse(resp *http.Response) (*JishoSection, error)
 	var wordSection JishoWordSection
 
 	wordSectionEl := doc.Find(".concept_light").First()
+	if wordSectionEl.Length() == 0 {
+		return nil, nil
+	}
 	readingsSection := wordSectionEl.Find(".concept_light-wrapper .concept_light-readings").First()
 	meaningSection := wordSectionEl.Find(".meanings-wrapper").First()
 

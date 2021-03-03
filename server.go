@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"strings"
 )
@@ -49,10 +48,8 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("Gonna search for: " + word)
-	// TODO: Split search if it's kana (do not do kanjidamage then)
-
-	s.renderTemplate(w, s.getSections(word))
+	data := s.getSections(word)
+	s.renderTemplate(w, data)
 }
 
 func (s *server) getSections(word string) *TemplateParams {
@@ -66,12 +63,14 @@ func (s *server) getSections(word string) *TemplateParams {
 		s.Errorf(err, "error getting jisho section")
 	}
 
-	for _, c := range word {
-		sect, err := s.kanjidmg.GetSection(c)
-		if err == nil {
-			tParams.Kanjidmg = append(tParams.Kanjidmg, sect)
-		} else {
-			s.Errorf(err, "error getting kanjidmg section")
+	if IsKanjiWord(word) {
+		for _, c := range word {
+			sect, err := s.kanjidmg.GetSection(c)
+			if err == nil {
+				tParams.Kanjidmg = append(tParams.Kanjidmg, sect)
+			} else {
+				s.Errorf(err, "error getting kanjidmg section")
+			}
 		}
 	}
 
