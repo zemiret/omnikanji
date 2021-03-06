@@ -36,6 +36,15 @@ type JishoMeaning struct {
 }
 
 type JishoKanji struct {
+	Kanji    JishoWordWithLink
+	Meaning  string
+	Kunyomis []JishoWordWithLink
+	Onyomis  []JishoWordWithLink
+}
+
+type JishoWordWithLink struct {
+	Link string
+	Word string
 }
 
 func (h *JishoHandler) GetSection(word string) (*JishoSection, error) {
@@ -70,11 +79,25 @@ func (h *JishoHandler) parseResponse(resp *http.Response) (*JishoSection, error)
 		return nil, err
 	}
 
+	wordSection := h.parseWordSection(doc)
+	if wordSection == nil {
+		return nil, nil
+	}
+
+	kanjis := h.parseKanjiSection(doc)
+
+	return &JishoSection{
+		WordSection: *wordSection,
+		Kanjis:      kanjis,
+	}, nil
+}
+
+func (h *JishoHandler) parseWordSection(doc *goquery.Document) *JishoWordSection {
 	var wordSection JishoWordSection
 
 	wordSectionEl := doc.Find(".concept_light").First()
 	if wordSectionEl.Length() == 0 {
-		return nil, nil
+		return nil
 	}
 	readingsSection := wordSectionEl.Find(".concept_light-wrapper .concept_light-readings").First()
 	meaningSection := wordSectionEl.Find(".meanings-wrapper").First()
@@ -83,10 +106,52 @@ func (h *JishoHandler) parseResponse(resp *http.Response) (*JishoSection, error)
 	wordSection.Reading = h.parseReading(readingsSection)
 	wordSection.Meanings = h.parseMeanings(meaningSection)
 
-	return &JishoSection{
-		WordSection: wordSection,
-		Kanjis:      nil, // TODO: Kanjis
-	}, nil
+	return &wordSection
+}
+
+func (h *JishoHandler) parseKanjiSection(doc *goquery.Document) []JishoKanji {
+	kanjiSectionEl := doc.Find("#secondary .kanji_light_block").First()
+	if kanjiSectionEl.Length() == 0 {
+		return nil
+	}
+	return h.parseKanjis(kanjiSectionEl)
+}
+
+func (h *JishoHandler) parseKanjis(kanjiSection *goquery.Selection) []JishoKanji {
+	var kanjis []JishoKanji
+
+	kanjiSection.Find(".kanji_light_content").Each(func(_ int, el *goquery.Selection) {
+		kanjiLink := el.Find(".literal_block .character a")
+
+		kunyomisEl := el.Find(".kun").First()
+		kunyomisEl.Find(".type").Remove()
+		onyomisEl := el.Find(".on").First()
+		onyomisEl.Find(".type").Remove()
+
+		kanjis = append(kanjis, JishoKanji{
+			Kanji:    JishoWordWithLink{
+				Link: kanjiLink.AttrOr("href", ""),
+				Word: kanjiLink.Text(),
+			},
+			Meaning:  el.Find(".meanings").Text(),
+			Kunyomis: h.parseKanjiReadings(kunyomisEl),
+			Onyomis:  h.parseKanjiReadings(onyomisEl),
+		})
+	})
+
+	return kanjis
+}
+
+func (h *JishoHandler) parseKanjiReadings(readingsEl *goquery.Selection) []JishoWordWithLink {
+	var readings []JishoWordWithLink
+	readingsEl.Find("a").Each(func (_ int, el *goquery.Selection) {
+		readings = append(readings, JishoWordWithLink{
+			Link: el.AttrOr("href", ""),
+			Word: el.Text(),
+		})
+	})
+
+	return readings
 }
 
 func (h *JishoHandler) parseWord(readingsSection *goquery.Selection) string {
