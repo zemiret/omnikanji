@@ -2,12 +2,12 @@ package main
 
 import (
 	"github.com/PuerkitoBio/goquery"
-	"html/template"
 	"log"
 	"net/http"
 )
 
-var templates = template.Must(template.ParseFiles("index.html"))
+// TODO: Get back to using this
+//var templates = template.Must(template.ParseFiles("index.html"))
 
 const (
 	jishoSearchUrl = "https://jisho.org/search/"
@@ -17,7 +17,6 @@ const (
 )
 
 
-// TODO: Jisho kanjis section (in jukugo)
 // TODO: Periodic refresh of kanjidmg list of kanjis (once every week is enough)
 
 func main() {
@@ -31,6 +30,7 @@ func main() {
 	srv := newServer(jisho, kanjidmg)
 
 	http.HandleFunc("/", srv.handleIndex)
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	log.Println("Starting server at localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

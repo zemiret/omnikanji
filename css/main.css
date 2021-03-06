@@ -1,0 +1,87 @@
+:root {
+    --spacing-lg: 48px;
+    --spacing-md: 24px;
+    --spacng-sm: 12px;
+
+    --color-error: #c63f3f;
+}
+
+html {
+    font-family: "Helvetica Neue", Helvetica, Arial, "Source Han Sans", sans-serif;
+    font-size: 14px;
+}
+
+h1 {
+    font-size: 3rem;
+}
+
+h2 {
+    font-size: 2.2rem;
+}
+
+h3 {
+    font-size: 2rem;
+}
+
+h4 {
+    font-size: 1.6rem;
+}
+
+h5 {
+    font-size: 1.2rem;
+}
+
+h6 {
+    font-size: 1rem;
+}
+
+ol {
+    list-style: decimal;
+}
+
+.text-error {
+    color: var(--color-error);
+}
+
+.body-container {
+    margin-top: var(--spacing-lg);
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+#search-form-section {
+    margin-bottom: var(--spacing-md);
+}
+
+#search-form-section .word-input {
+    width: calc(100% - 150px);
+}
+
+#search-form-section input[type=submit] {
+    width: 120px;
+}
+
+
+#error-section {
+    margin-bottom: var(--spacing-md);
+}
+
+#jisho-section {
+    margin-bottom: var(--spacing-md);
+}
+
+#jisho-section .jisho-header {
+    margin-bottom: var(--spacng-sm);
+}
+
+#jisho-section .kanji-with-reading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 20%;
+}
+
+#jisho-section .kanji-with-reading h1,
+#jisho-section .kanji-with-reading h4 {
+    display: inline-block;
+}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html/template"
 	"net/http"
 	"strings"
 )
@@ -84,6 +85,8 @@ func (s *server) errorParams(msg string) *TemplateParams {
 }
 
 func (s *server) renderTemplate(w http.ResponseWriter, data *TemplateParams) {
+	var templates = template.Must(template.ParseFiles("index.html"))
+
 	err := templates.ExecuteTemplate(w, "index.html", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
