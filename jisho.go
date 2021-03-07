@@ -29,6 +29,7 @@ type JishoWordSection struct {
 }
 
 type JishoMeaning struct {
+	ListItem
 	Meaning string
 	Tags    *string
 	//MeaningSentence  *string
@@ -129,7 +130,7 @@ func (h *JishoHandler) parseKanjis(kanjiSection *goquery.Selection) []JishoKanji
 		onyomisEl.Find(".type").Remove()
 
 		kanjis = append(kanjis, JishoKanji{
-			Kanji:    JishoWordWithLink{
+			Kanji: JishoWordWithLink{
 				Link: kanjiLink.AttrOr("href", ""),
 				Word: kanjiLink.Text(),
 			},
@@ -144,7 +145,7 @@ func (h *JishoHandler) parseKanjis(kanjiSection *goquery.Selection) []JishoKanji
 
 func (h *JishoHandler) parseKanjiReadings(readingsEl *goquery.Selection) []JishoWordWithLink {
 	var readings []JishoWordWithLink
-	readingsEl.Find("a").Each(func (_ int, el *goquery.Selection) {
+	readingsEl.Find("a").Each(func(_ int, el *goquery.Selection) {
 		readings = append(readings, JishoWordWithLink{
 			Link: el.AttrOr("href", ""),
 			Word: el.Text(),
@@ -166,7 +167,8 @@ func (h *JishoHandler) parseMeanings(meaningSection *goquery.Selection) []JishoM
 	var meanings []JishoMeaning
 
 	lastTag := ""
-	meaningSection.Children().Each(func(_ int, el *goquery.Selection) {
+	idx := 1
+	meaningSection.Children().Each(func(i int, el *goquery.Selection) {
 		if el.HasClass("meaning-tags") {
 			lastTag = strings.TrimSpace(el.Text())
 		} else if el.HasClass("meaning-wrapper") {
@@ -176,6 +178,8 @@ func (h *JishoHandler) parseMeanings(meaningSection *goquery.Selection) []JishoM
 				t := lastTag
 				jishoMeaning.Tags = &t
 			}
+			jishoMeaning.ListIdx = idx
+			idx++
 			meanings = append(meanings, jishoMeaning)
 			lastTag = ""
 		}

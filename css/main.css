@@ -1,9 +1,12 @@
 :root {
     --spacing-lg: 48px;
     --spacing-md: 24px;
-    --spacng-sm: 12px;
+    --spacing-sm: 12px;
+    --spacing-xsm: 6px;
 
     --color-error: #c63f3f;
+    --color-secondary: #717171;
+    --color-black: #000000;
 }
 
 html {
@@ -35,12 +38,16 @@ h6 {
     font-size: 1rem;
 }
 
-ol {
-    list-style: decimal;
+.inline-block {
+    display: inline-block;
 }
 
 .text-error {
     color: var(--color-error);
+}
+
+.text-secondary {
+    color: var(--color-secondary);
 }
 
 .body-container {
@@ -49,9 +56,45 @@ ol {
     margin-right: 10%;
 }
 
-#search-form-section {
+.flex-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.flex-row {
+    display: flex;
+    flex-direction: row;
+}
+
+.flex-align-center {
+    align-items: center;
+}
+
+.flex-align-start {
+    align-items: start;
+}
+
+.margin-bot-md {
     margin-bottom: var(--spacing-md);
 }
+
+.margin-right-md {
+    margin-right: var(--spacing-md);
+}
+
+.margin-bot-sm {
+    margin-bottom: var(--spacing-sm);
+}
+
+.margin-bot-xsm {
+    margin-bottom: var(--spacing-xsm);
+}
+
+.link-plain, .link-plain:hover, .link-plain:active {
+    text-decoration: none;
+    color: var(--color-black);
+}
+
 
 #search-form-section .word-input {
     width: calc(100% - 150px);
@@ -61,25 +104,6 @@ ol {
     width: 120px;
 }
 
-
-#error-section {
-    margin-bottom: var(--spacing-md);
-}
-
-#jisho-section {
-    margin-bottom: var(--spacing-md);
-}
-
-#jisho-section .jisho-header {
-    margin-bottom: var(--spacng-sm);
-}
-
-#jisho-section .kanji-with-reading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 20%;
-}
 
 #jisho-section .kanji-with-reading h1,
 #jisho-section .kanji-with-reading h4 {

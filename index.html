@@ -10,7 +10,7 @@
 <body>
 
 <div class="body-container">
-    <section id="search-form-section">
+    <section id="search-form-section" class="margin-bot-md">
         <form action="/search/">
             <label for="word-input">
             </label>
@@ -21,66 +21,93 @@
 
     {{ if . }}
     {{ if .Error }}
-    <section id="error-section">
-    <h3 class="text-error">
-       {{.Error}}
-    </h3>
+    <section id="error-section" class="margin-bot-md">
+        <h3 class="text-error">
+            {{.Error}}
+        </h3>
     </section>
     {{ else }}
-        {{ if not (or .Jisho .Kanjidmg) }}
-        <section>
-            <h4>
-                No results
-            </h4>
-        </section>
-        {{ end }}
+    {{ if not (or .Jisho .Kanjidmg) }}
+    <section>
+        <h4>
+            No results
+        </h4>
+    </section>
+    {{ end }}
     {{ end }}
 
 
     {{ if .Jisho }}
-    <section id="jisho-section">
-        <h1 class="jisho-header">Jisho</h1>
+    <section id="jisho-section" class="margin-bot-md">
+        <h1 class="margin-bot-sm">Jisho</h1>
+        <h3 class="margin-bot-sm">Word</h3>
 
-        <div class="kanji-with-reading">
-            <h1>{{.Jisho.WordSection.Word}}</h1>
-            <h4>{{.Jisho.WordSection.Reading}}</h4>
+        <div class="flex-row">
+            <div class="margin-right-md">
+                <div class="flex-col flex-align-start margin-bot-sm">
+                    <div class="flex-col flex-align-center">
+                        <h1>{{.Jisho.WordSection.Word}}</h1>
+                        <h5>{{.Jisho.WordSection.Reading}}</h5>
+                    </div>
+                </div>
+
+                <div class="margin-bot-sm">
+                    <a href="{{.Jisho.Link}}">{{.Jisho.WordSection.Word}} at jisho.org</a>
+                </div>
+            </div>
+
+
+            <div>
+                <ol>
+                    {{ range $idx, $m := .Jisho.WordSection.Meanings }}
+                    <li class="margin-bot-sm">
+                        {{ if $m.Tags }}
+                        <div class="margin-bot-xsm text-secondary">{{ $m.Tags }}</div>
+                        {{ end }}
+                        <h4>{{$m.ListIdx}}. {{$m.Meaning}}</h4>
+                    </li>
+                    {{ end }}
+                </ol>
+            </div>
         </div>
 
-        <a href="{{.Jisho.Link}}">{{.Jisho.WordSection.Word}} at jisho.org</a>
-
-        <ol>
-            {{ range $idx, $m := .Jisho.WordSection.Meanings }}
-            <li>
-                <h4>{{$m.Meaning}}</h4>
-                {{ if $m.Tags }}
-                <span>{{ $m.Tags }}</span>
-                {{ end }}
-            </li>
-            {{ end }}
-        </ol>
-
         <aside>
-            {{ range $idx, $k := .Jisho.Kanjis }}
-            <div>
-                <a href="{{$k.Kanji.Link}}">{{$k.Kanji.Word}}</a>
-                <span>{{$k.Meaning}}</span>
-                <span>
-            Kun:
-            {{ range $jdx, $r := $k.Kunyomis }}
-            <a href="{{$r.Link}}">{{$r.Word}}</a>
-            {{ end }}
-        </span>
+            <h3 class="margin-bot-md">Kanji</h3>
+            <div class="">
+                {{ range $idx, $k := .Jisho.Kanjis }}
+                <div class="flex-row">
+                    <div class="margin-right-md margin-bot-sm">
+                        <h1>
+                            <a href="{{$k.Kanji.Link}}" class="link-plain">{{$k.Kanji.Word}}</a>
+                        </h1>
+                    </div>
 
-                <span>
-            On:
-            {{ range $jdx, $r := $k.Onyomis }}
-            <a href="{{$r.Link}}">{{$r.Word}}</a>
-            {{ end }}
-        </span>
+                    <div class="flex-col margin-bot-sm">
+                        <h4 class="margin-bot-sm">{{$k.Meaning}}</h4>
+                        <div class="margin-bot-xsm">
+                            <h5 class="inline-block">Kun:</h5>
+                            {{ range $jdx, $r := $k.Kunyomis }}
+                            <h5 class="inline-block">
+                                <a href="{{$r.Link}}" class="link-plain">{{$r.Word}}</a>
+                                <span>, </span>
+                            </h5>
+                            {{ end }}
+                        </div>
+
+                        <div>
+                            <h5 class="inline-block">On:</h5>
+                            {{ range $jdx, $r := $k.Onyomis }}
+                            <h5 class="inline-block">
+                                <a href="{{$r.Link}}" class="link-plain">{{$r.Word}}</a>
+                                <span>, </span>
+                            </h5>
+                            {{ end }}
+                        </div>
+                    </div>
+                </div>
                 {{ end }}
             </div>
         </aside>
-
     </section>
     {{ end }}
 
