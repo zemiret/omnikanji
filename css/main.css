@@ -74,6 +74,22 @@ h6 {
     align-items: start;
 }
 
+.flex-align-baseline {
+    align-items: baseline;
+}
+
+.flex-justify-space-between {
+    justify-content: space-between;
+}
+
+.margin-bot-lg {
+    margin-bottom: var(--spacing-lg);
+}
+
+.margin-right-lg {
+    margin-right: var(--spacing-lg);
+}
+
 .margin-bot-md {
     margin-bottom: var(--spacing-md);
 }
@@ -86,8 +102,16 @@ h6 {
     margin-bottom: var(--spacing-sm);
 }
 
+.margin-right-sm {
+    margin-right: var(--spacing-sm);
+}
+
 .margin-bot-xsm {
     margin-bottom: var(--spacing-xsm);
+}
+
+.margin-right-xsm {
+    margin-right: var(--spacing-xsm);
 }
 
 .link-plain, .link-plain:hover, .link-plain:active {
@@ -108,4 +132,9 @@ h6 {
 #jisho-section .kanji-with-reading h1,
 #jisho-section .kanji-with-reading h4 {
     display: inline-block;
+}
+
+#kanjidmg-section .kanji-img {
+    width: 2rem;
+    height: 2rem;
 }

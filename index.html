@@ -113,42 +113,63 @@
 
     {{ if .Kanjidmg }}
     <section id="kanjidmg-section">
-        <h1>Kanjidamage</h1>
+        <h1 class="margin-bot-sm">Kanjidamage</h1>
 
         {{ range $idx, $sect := .Kanjidmg }}
-        <a href="{{$sect.WordSection.Link}}">{{$sect.WordSection.Kanji}} at kanjidamage.com</a>
 
-        <h1>{{$sect.WordSection.Kanji}}</h1>
-        <span>{{$sect.WordSection.Meaning}}</span>
+        <div class="margin-bot-lg">
+            <div class="flex-row margin-bot-sm">
+                <div class="margin-right-lg">
+                    <div class="flex-row flex-align-center margin-bot-xsm">
+                        <h1 class="margin-right-md">{{$sect.WordSection.Kanji}}</h1>
+                        <h4>{{$sect.WordSection.Meaning}}</h4>
+                    </div>
 
-        <ol>
-            {{ range $jdx, $radical := $sect.Radicals }}
-            <li>
-                <a href="{{$radical.Link}}">
-                    {{ if $radical.Kanji }}
-                    <span>{{$radical.Kanji}} {{$radical.Meaning}}</span>
-                    {{ else if $radical.KanjiImage }}
-                    <span>
-                    <img alt="{{$radical.Meaning}}" src="data:image/png;base64,{{$radical.KanjiImage}}"/>
-                    {{$radical.Meaning}}
-                </span>
+                    {{ if $sect.Onyomi }}
+                    <div class="margin-bot-xsm flex-row flex-align-baseline">
+                        <h4 class="margin-right-xsm">On:</h4>
+                        <h5>{{$sect.Onyomi}}</h5>
+                    </div>
                     {{ end }}
-                </a>
-            </li>
-            {{ end }}
-        </ol>
+                </div>
 
-        <h2>Mnemonic</h2>
-        <h3>{{$sect.Mnemonic}}</h3>
+                <div class="flex-row">
+                    {{ range $jdx, $radical := $sect.Radicals }}
+                    <div class="flex-col flex-align-center margin-right-md">
+                        <a class="link-plain" href="{{$radical.Link}}">
+                            {{ if $radical.Kanji }}
+                            <h3>{{$radical.Kanji}}</h3>
+                            {{ else if $radical.KanjiImage }}
+                            <h3>
+                                <img class="kanji-img" alt="{{$radical.Meaning}}"
+                                     src="data:image/png;base64,{{$radical.KanjiImage}}"/>
+                            </h3>
+                            {{ end }}
+                        </a>
 
-        <h2>Onyomi</h2>
-        <h3>{{$sect.Onyomi}}</h3>
+                        <h5>
+                            {{$radical.Meaning}}
+                        </h5>
+                    </div>
+                    {{ end }}
+                </div>
+            </div>
 
+
+            <div class="margin-bot-sm">
+                <h2 class="margin-bot-xsm">Mnemonic</h2>
+                <h4>{{$sect.Mnemonic}}</h4>
+            </div>
+
+            <div>
+                <a href="{{$sect.WordSection.Link}}">{{$sect.WordSection.Kanji}} at kanjidamage.com</a>
+            </div>
+        </div>
         {{ end }}
     </section>
     {{ end }}
-    {{ end }}
 
+    {{ end }}
 </body>
 </html>
 </div>

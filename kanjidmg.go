@@ -171,7 +171,7 @@ func (h *KanjidmgHandler) parseRadicals(radicalsSection *goquery.Selection) (rad
 
 	usedLinks := 0
 	radicalsSection.Contents().Not("a").Each(func(_ int, m *goquery.Selection) {
-		meaningText := h.cleanupMeaning(m.Text())
+		meaningText := h.trimNotCharacters(m.Text())
 		if strings.TrimSpace(meaningText) != "" {
 
 			kanjiCharSection := radicalsLinks.Eq(usedLinks)
@@ -195,7 +195,7 @@ func (h *KanjidmgHandler) parseRadicals(radicalsSection *goquery.Selection) (rad
 	return
 }
 
-func (h *KanjidmgHandler) cleanupMeaning(text string) string {
+func (h *KanjidmgHandler) trimNotCharacters(text string) string {
 	return strings.Trim(text, "+_-=,.:;'\"/|\\][() \t\n!?@$#%*")
 }
 
@@ -208,5 +208,5 @@ func (h *KanjidmgHandler) parseMnemonic(contentSection *goquery.Selection) strin
 }
 
 func (h *KanjidmgHandler) parseContentRow(section *goquery.Selection, sectionHeader string) string {
-	return section.Find("h2:contains(" + sectionHeader + ")").Next().Text()
+	return h.trimNotCharacters(section.Find("h2:contains(" + sectionHeader + ")").Next().Text())
 }
