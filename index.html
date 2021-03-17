@@ -14,7 +14,7 @@
         <form action="/search/">
             <label for="word-input">
             </label>
-            <input name="word" id="word-input" class="word-input" type="text" placeholder="言葉" value="言葉"/>
+            <input name="word" id="word-input" class="word-input" type="text" placeholder="言葉" value=""/>
             <input type="submit" value="Search"/>
         </form>
     </section>
@@ -52,7 +52,7 @@
                 </div>
 
                 <div class="margin-bot-sm">
-                    <a href="{{.Jisho.Link}}">{{.Jisho.WordSection.Word}} at jisho.org</a>
+                    <a target="_blank" href="{{.Jisho.Link}}">{{.Jisho.WordSection.Word}} at jisho.org</a>
                 </div>
             </div>
 
@@ -78,7 +78,7 @@
                 <div class="flex-row">
                     <div class="margin-right-md margin-bot-sm">
                         <h1>
-                            <a href="{{$k.Kanji.Link}}" class="link-plain">{{$k.Kanji.Word}}</a>
+                            <a target="_blank" href="{{$k.Kanji.Link}}" class="link-plain">{{$k.Kanji.Word}}</a>
                         </h1>
                     </div>
 
@@ -88,7 +88,7 @@
                             <h5 class="inline-block">Kun:</h5>
                             {{ range $jdx, $r := $k.Kunyomis }}
                             <h5 class="inline-block">
-                                <a href="{{$r.Link}}" class="link-plain">{{$r.Word}}</a>
+                                <a target="_blank" href="{{$r.Link}}" class="link-plain">{{$r.Word}}</a>
                                 <span>, </span>
                             </h5>
                             {{ end }}
@@ -98,7 +98,7 @@
                             <h5 class="inline-block">On:</h5>
                             {{ range $jdx, $r := $k.Onyomis }}
                             <h5 class="inline-block">
-                                <a href="{{$r.Link}}" class="link-plain">{{$r.Word}}</a>
+                                <a target="_blank" href="{{$r.Link}}" class="link-plain">{{$r.Word}}</a>
                                 <span>, </span>
                             </h5>
                             {{ end }}
@@ -124,19 +124,12 @@
                         <h1 class="margin-right-md">{{$sect.WordSection.Kanji}}</h1>
                         <h4>{{$sect.WordSection.Meaning}}</h4>
                     </div>
-
-                    {{ if $sect.Onyomi }}
-                    <div class="margin-bot-xsm flex-row flex-align-baseline">
-                        <h4 class="margin-right-xsm">On:</h4>
-                        <h5>{{$sect.Onyomi}}</h5>
-                    </div>
-                    {{ end }}
                 </div>
 
                 <div class="flex-row">
                     {{ range $jdx, $radical := $sect.Radicals }}
                     <div class="flex-col flex-align-center margin-right-md">
-                        <a class="link-plain" href="{{$radical.Link}}">
+                        <a target="_blank" class="link-plain" href="{{$radical.Link}}">
                             {{ if $radical.Kanji }}
                             <h3>{{$radical.Kanji}}</h3>
                             {{ else if $radical.KanjiImage }}
@@ -155,6 +148,12 @@
                 </div>
             </div>
 
+            {{ if $sect.Onyomi }}
+            <div class="margin-bot-xsm flex-row flex-align-baseline">
+                <h4 class="margin-right-xsm">On:</h4>
+                <h5>{{$sect.Onyomi}}</h5>
+            </div>
+            {{ end }}
 
             <div class="margin-bot-sm">
                 <h2 class="margin-bot-xsm">Mnemonic</h2>
@@ -162,7 +161,7 @@
             </div>
 
             <div>
-                <a href="{{$sect.WordSection.Link}}">{{$sect.WordSection.Kanji}} at kanjidamage.com</a>
+                <a target="_blank" href="{{$sect.WordSection.Link}}">{{$sect.WordSection.Kanji}} at kanjidamage.com</a>
             </div>
         </div>
         {{ end }}

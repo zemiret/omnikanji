@@ -6,7 +6,6 @@ import (
 	"net/http"
 )
 
-// TODO: Get back to using this
 //var templates = template.Must(template.ParseFiles("index.html"))
 
 const (
@@ -17,7 +16,6 @@ const (
 )
 
 
-// TODO: DEBUG links to radicals do not work in kanjidamage
 // TODO: Periodic refresh of kanjidmg list of kanjis (once every week or even month is enough)
 // TODO: Better reading handling in jisho (each kanji reading)
 

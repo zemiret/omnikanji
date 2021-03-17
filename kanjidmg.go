@@ -167,6 +167,8 @@ func (h *KanjidmgHandler) fetchKanjiImg(url string) (string, error) {
 }
 
 func (h *KanjidmgHandler) parseRadicals(radicalsSection *goquery.Selection) (radicals []KanjidmgKanji, err error) {
+	radicalsSection.Find(".label-info").Remove()
+
 	radicalsLinks := radicalsSection.Find("a")
 
 	usedLinks := 0
@@ -186,7 +188,7 @@ func (h *KanjidmgHandler) parseRadicals(radicalsSection *goquery.Selection) (rad
 				Kanji:      kanjiStr,
 				KanjiImage: kanjiImg,
 				Meaning:    meaningText,
-				Link:       radicalsLinks.Eq(usedLinks).AttrOr("href", ""),
+				Link:       kanjidmgBaseUrl + "/" + radicalsLinks.Eq(usedLinks).AttrOr("href", ""),
 			})
 			usedLinks += 1
 		}

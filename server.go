@@ -4,6 +4,8 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"sync"
+	"unicode/utf8"
 )
 
 
@@ -58,25 +60,39 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 func (s *server) getSections(word string) *TemplateParams {
 	var tParams TemplateParams
 
+	var wg sync.WaitGroup
+
 	// TODO: This could go in parallel
-	jishoSection, err := s.jisho.GetSection(word)
-	if err == nil {
-		tParams.Jisho = jishoSection
-	} else {
-		s.Errorf(err, "error getting jisho section")
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		jishoSection, err := s.jisho.GetSection(word)
+		if err == nil {
+			tParams.Jisho = jishoSection
+		} else {
+			s.Errorf(err, "error getting jisho section")
+		}
+	}()
 
 	if IsKanjiWord(word) {
+		tParams.Kanjidmg = make([]*KanjidmgSection, utf8.RuneCountInString(word))
+		idx := 0
 		for _, c := range word {
-			sect, err := s.kanjidmg.GetSection(c)
-			if err == nil {
-				tParams.Kanjidmg = append(tParams.Kanjidmg, sect)
-			} else {
-				s.Errorf(err, "error getting kanjidmg section")
-			}
+			wg.Add(1)
+			go func(i int, c rune) {
+				defer wg.Done()
+				sect, err := s.kanjidmg.GetSection(c)
+				if err == nil {
+					tParams.Kanjidmg[i] = sect
+				} else {
+					s.Errorf(err, "error getting kanjidmg section")
+				}
+			}(idx, c)
+			idx++
 		}
 	}
 
+	wg.Wait()
 	return &tParams
 }
 
