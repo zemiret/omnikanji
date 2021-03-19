@@ -66,7 +66,7 @@ func (s *server) getSections(word string) *TemplateParams {
 
 	wordKanjis := jptext.ExtractKanjis(word)
 	if wordKanjis != "" {
-		s.doKanjidmgSearch(&wg, &tParams, wordKanjis)
+		s.doKanjidmgSearch(&tParams, wordKanjis)
 	}
 
 	wg.Wait()
@@ -86,8 +86,10 @@ func (s *server) doJishoSearch(wg *sync.WaitGroup, tParams *TemplateParams, word
 	}()
 }
 
-func (s *server) doKanjidmgSearch(wg *sync.WaitGroup, tParams *TemplateParams, word string) {
-	tParams.Kanjidmg = make([]*KanjidmgSection, utf8.RuneCountInString(word))
+func (s *server) doKanjidmgSearch(tParams *TemplateParams, word string) {
+	var wg sync.WaitGroup
+
+	results := make([]*KanjidmgSection, utf8.RuneCountInString(word))
 	idx := 0
 	for _, c := range word {
 		wg.Add(1)
@@ -95,12 +97,19 @@ func (s *server) doKanjidmgSearch(wg *sync.WaitGroup, tParams *TemplateParams, w
 			defer wg.Done()
 			sect, err := s.kanjidmg.GetSection(c)
 			if err == nil {
-				tParams.Kanjidmg[i] = sect
+				results[i] = sect
 			} else {
 				s.Errorf(err, "error getting kanjidmg section")
 			}
 		}(idx, c)
 		idx++
+	}
+
+	wg.Wait()
+	for _, r := range results {
+		if r != nil {
+			tParams.Kanjidmg = append(tParams.Kanjidmg, r)
+		}
 	}
 }
 
