@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/zemiret/omnikanji/jptext"
 	"html/template"
 	"net/http"
 	"strings"
@@ -46,7 +47,7 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !IsJapaneseWord(word) {
+	if !jptext.IsJapaneseWord(word) {
 		s.renderTemplate(w, s.errorParams("IT'S NOT JAPANESE YOU MORON :|"))
 		return
 	}
@@ -59,10 +60,20 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) getSections(word string) *TemplateParams {
 	var tParams TemplateParams
-
 	var wg sync.WaitGroup
 
-	// TODO: This could go in parallel
+	s.doJishoSearch(&wg, &tParams, word)
+
+	wordKanjis := jptext.ExtractKanjis(word)
+	if wordKanjis != "" {
+		s.doKanjidmgSearch(&wg, &tParams, wordKanjis)
+	}
+
+	wg.Wait()
+	return &tParams
+}
+
+func (s *server) doJishoSearch(wg *sync.WaitGroup, tParams *TemplateParams, word string) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -73,27 +84,24 @@ func (s *server) getSections(word string) *TemplateParams {
 			s.Errorf(err, "error getting jisho section")
 		}
 	}()
+}
 
-	if IsKanjiWord(word) {
-		tParams.Kanjidmg = make([]*KanjidmgSection, utf8.RuneCountInString(word))
-		idx := 0
-		for _, c := range word {
-			wg.Add(1)
-			go func(i int, c rune) {
-				defer wg.Done()
-				sect, err := s.kanjidmg.GetSection(c)
-				if err == nil {
-					tParams.Kanjidmg[i] = sect
-				} else {
-					s.Errorf(err, "error getting kanjidmg section")
-				}
-			}(idx, c)
-			idx++
-		}
+func (s *server) doKanjidmgSearch(wg *sync.WaitGroup, tParams *TemplateParams, word string) {
+	tParams.Kanjidmg = make([]*KanjidmgSection, utf8.RuneCountInString(word))
+	idx := 0
+	for _, c := range word {
+		wg.Add(1)
+		go func(i int, c rune) {
+			defer wg.Done()
+			sect, err := s.kanjidmg.GetSection(c)
+			if err == nil {
+				tParams.Kanjidmg[i] = sect
+			} else {
+				s.Errorf(err, "error getting kanjidmg section")
+			}
+		}(idx, c)
+		idx++
 	}
-
-	wg.Wait()
-	return &tParams
 }
 
 func (s *server) errorParams(msg string) *TemplateParams {

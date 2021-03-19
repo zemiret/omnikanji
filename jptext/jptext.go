@@ -1,4 +1,4 @@
-package main
+package jptext
 
 const (
 	kanjiStartRange = 0x4e00
@@ -34,3 +34,12 @@ func IsKanjiWord(word string) bool {
 	return true
 }
 
+func ExtractKanjis(word string) string {
+	wordKanjis := ""
+	for _, c := range word {
+		if IsKanji(c) {
+			wordKanjis += string(c)
+		}
+	}
+	return wordKanjis
+}
