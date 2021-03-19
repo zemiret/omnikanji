@@ -52,8 +52,6 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.Printf("Searching for: %s\n", word)
-
 	data := s.getSections(word)
 	s.renderTemplate(w, data)
 }

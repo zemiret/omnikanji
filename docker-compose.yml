@@ -1,0 +1,18 @@
+version: '3'
+
+networks:
+  proxy-tier:
+    external:
+      name: nginx-proxy
+
+services:
+  omnikanji:
+    build: .
+    environment:
+      - VIRTUAL_HOST=omnikanji.amleczko.pl
+      - VIRTUAL_PORT=8080
+      - LETSENCRYPT_HOST=omnikanji.amleczko.pl
+      - LETSENCRYPT_EMAIL=dev@amleczko.pl
+    networks:
+      - proxy-tier
+
