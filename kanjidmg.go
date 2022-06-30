@@ -84,7 +84,7 @@ func (h *KanjidmgHandler) parseResponse(resp *http.Response, url string) (*Kanji
 	wordSection := rows.Eq(1)
 	wordSectionClone := wordSection.Clone()
 	wordSectionClone.Find("h1").Remove()
-	radicalsSection := wordSectionClone.Find("div.span8")
+	radicalsSection := wordSectionClone.Find(".col-md-8")
 	contentSection := rows.Eq(2)
 
 	// TODO: Top comment
@@ -167,7 +167,7 @@ func (h *KanjidmgHandler) fetchKanjiImg(url string) (string, error) {
 }
 
 func (h *KanjidmgHandler) parseRadicals(radicalsSection *goquery.Selection) (radicals []KanjidmgKanji, err error) {
-	radicalsSection.Find(".label-info").Remove()
+	radicalsSection.Find("h1").Remove()
 
 	radicalsLinks := radicalsSection.Find("a")
 

@@ -48,6 +48,13 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !jptext.IsJapaneseWord(word) {
+		// TODO: Add english lookup (proxy to jisho basically or sth else)
+//		data, err := s.jisho.GetSection(word)
+//		if err != nil {
+//			s.Errorf(err, "s.jisho.GetSection(word)")
+//		}
+//		s.renderTemplate(w, data)
+
 		s.renderTemplate(w, s.errorParams("IT'S NOT JAPANESE YOU MORON :|"))
 		return
 	}
