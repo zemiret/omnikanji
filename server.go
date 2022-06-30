@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"github.com/zemiret/omnikanji/jptext"
 	"html/template"
 	"net/http"
@@ -48,31 +49,55 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !jptext.IsJapaneseWord(word) {
-		// TODO: Add english lookup (proxy to jisho basically or sth else)
-//		data, err := s.jisho.GetSection(word)
-//		if err != nil {
-//			s.Errorf(err, "s.jisho.GetSection(word)")
-//		}
-//		s.renderTemplate(w, data)
-
-		s.renderTemplate(w, s.errorParams("IT'S NOT JAPANESE YOU MORON :|"))
+		data := s.searchFromEnglish(word)
+		s.renderTemplate(w, data)
 		return
 	}
 
-	data := s.getSections(word)
+	data := s.searchFromJapanese(word)
 	s.renderTemplate(w, data)
 }
 
-func (s *server) getSections(word string) *TemplateParams {
+func (s *server) searchFromEnglish(word string) *TemplateParams {
+	var wg sync.WaitGroup
+	var tParams TemplateParams
+	s.doJishoSearch(&wg, &tParams, word)
+	wg.Wait()
+
+	// TODO: Correctly parse jisho lookup and provide kanjis lookup in kanjidmg
+	log.Printf("JISHO SECTION: %+v\n", tParams.Jisho)
+	log.Printf("JISHO KANJIS: %+v\n", tParams.Jisho.Kanjis)
+
+	var wordKanjis string 
+	for _, jishoKanji := range tParams.Jisho.Kanjis {
+		wordKanjis += jishoKanji.Kanji.Word
+	}
+
+	if wordKanjis != "" {
+		s.doKanjidmgSearch(&tParams, wordKanjis)
+	}
+
+	return &tParams 
+}
+
+func (s *server) searchFromJapanese(word string) *TemplateParams {
+	data := s.getSections(word, true)
+	return data
+}
+
+func (s *server) getSections(word string, parseKanjis bool) *TemplateParams {
 	var tParams TemplateParams
 	var wg sync.WaitGroup
 
 	s.doJishoSearch(&wg, &tParams, word)
 
-	wordKanjis := jptext.ExtractKanjis(word)
-	if wordKanjis != "" {
-		s.doKanjidmgSearch(&tParams, wordKanjis)
+	if parseKanjis {
+		wordKanjis := jptext.ExtractKanjis(word)
+		if wordKanjis != "" {
+			s.doKanjidmgSearch(&tParams, wordKanjis)
+		}
 	}
+
 
 	wg.Wait()
 	return &tParams
