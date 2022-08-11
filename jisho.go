@@ -49,7 +49,7 @@ type JishoWordWithLink struct {
 }
 
 func (h *JishoHandler) GetSection(word string) (*JishoSection, error) {
-	url := h.url(word)
+	url := h.Url(word)
 
 	resp, err := http.Get(url)
 	if resp != nil {
@@ -70,7 +70,7 @@ func (h *JishoHandler) GetSection(word string) (*JishoSection, error) {
 	return sect, nil
 }
 
-func (h *JishoHandler) url(word string) string {
+func (h *JishoHandler) Url(word string) string {
 	return h.searchUrl + word
 }
 

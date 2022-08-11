@@ -16,8 +16,7 @@ const (
 )
 
 
-// TODO: Periodic refresh of kanjidmg list of kanjis (once every week or even month is enough)
-// TODO: Better reading handling in jisho (each kanji reading)
+// TODO: Periodic refresh of kanjidmg list of kanjis (once every month is probably enough)
 
 func main() {
 	kanjidmgLinks, err := loadKanjidmgLinks()

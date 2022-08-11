@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"github.com/zemiret/omnikanji/jptext"
 	"html/template"
 	"net/http"
@@ -27,6 +26,8 @@ func newServer(jisho *JishoHandler, kanjidmg *KanjidmgHandler) *server {
 }
 
 type TemplateParams struct {
+	EnglishSearchedWord string
+	JishoEnglishWordLink string
 	Jisho    *JishoSection
 	Kanjidmg []*KanjidmgSection
 	Error    *string
@@ -64,18 +65,24 @@ func (s *server) searchFromEnglish(word string) *TemplateParams {
 	s.doJishoSearch(&wg, &tParams, word)
 	wg.Wait()
 
-	// TODO: Correctly parse jisho lookup and provide kanjis lookup in kanjidmg
-	log.Printf("JISHO SECTION: %+v\n", tParams.Jisho)
-	log.Printf("JISHO KANJIS: %+v\n", tParams.Jisho.Kanjis)
+	if tParams.Jisho == nil {
+		return &TemplateParams{}
+	}
 
 	var wordKanjis string 
-	for _, jishoKanji := range tParams.Jisho.Kanjis {
-		wordKanjis += jishoKanji.Kanji.Word
+	for _, c := range tParams.Jisho.WordSection.Word {
+		if jptext.IsKanji(c) {
+			wordKanjis += string(c)
+		}
 	}
 
 	if wordKanjis != "" {
 		s.doKanjidmgSearch(&tParams, wordKanjis)
 	}
+
+	tParams.EnglishSearchedWord = word
+	tParams.JishoEnglishWordLink = s.jisho.Url(word) 
+	tParams.Jisho.Link = s.jisho.Url(tParams.Jisho.WordSection.Word) // overwrite english word link
 
 	return &tParams 
 }
