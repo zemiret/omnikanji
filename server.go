@@ -70,9 +70,9 @@ func (s *server) searchFromEnglish(word string) *TemplateParams {
 	}
 
 	var wordKanjis string 
-	for _, c := range tParams.Jisho.WordSection.Word {
+	for _, c := range tParams.Jisho.WordSection.FullWord {
 		if jptext.IsKanji(c) {
-			wordKanjis += string(c)
+			wordKanjis += string(c)	
 		}
 	}
 
@@ -82,7 +82,7 @@ func (s *server) searchFromEnglish(word string) *TemplateParams {
 
 	tParams.EnglishSearchedWord = word
 	tParams.JishoEnglishWordLink = s.jisho.Url(word) 
-	tParams.Jisho.Link = s.jisho.Url(tParams.Jisho.WordSection.Word) // overwrite english word link
+	tParams.Jisho.Link = s.jisho.Url(tParams.Jisho.WordSection.FullWord) // overwrite english word link
 
 	return &tParams 
 }

@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
 	"net/http"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/zemiret/omnikanji/jptext"
 )
 
 type JishoHandler struct {
@@ -22,10 +24,15 @@ type JishoSection struct {
 }
 
 type JishoWordSection struct {
-	Word     string
-	Reading  string
+	FullWord string
+	Parts    []JishoWordPart
 	Meanings []JishoMeaning
 	//Notes *string
+}
+
+type JishoWordPart struct {
+	MainText string
+	Reading  string // Reading can be empty in case it's not a kanji
 }
 
 type JishoMeaning struct {
@@ -103,11 +110,67 @@ func (h *JishoHandler) parseWordSection(doc *goquery.Document) *JishoWordSection
 	readingsSection := wordSectionEl.Find(".concept_light-wrapper .concept_light-readings").First()
 	meaningSection := wordSectionEl.Find(".meanings-wrapper").First()
 
-	wordSection.Word = h.parseWord(readingsSection)
-	wordSection.Reading = h.parseReading(readingsSection)
+	// wordSection.Word = h.parseWord(readingsSection)
+	// wordSection.Reading = h.parseReading(readingsSection)
+
+	wordSection.FullWord, wordSection.Parts = h.parseWordParts(readingsSection)
 	wordSection.Meanings = h.parseMeanings(meaningSection)
 
 	return &wordSection
+}
+
+func (h *JishoHandler) parseWordParts(wordSection *goquery.Selection) (string, []JishoWordPart) {
+	fullWord := h.parseWord(wordSection)
+	var furiganaInParts []string
+	wordSection.Find(".furigana .kanji").Each(func(_ int, el *goquery.Selection) {
+		furiganaInParts = append(furiganaInParts, el.Text())
+	})
+
+	kanjiCount := 0
+	for _, c := range fullWord {
+		if jptext.IsKanji(c) {
+			kanjiCount++
+		}
+	}
+	if kanjiCount != len(furiganaInParts) {
+		// TODO: sth is messed up :/ Some fallback in such cases
+		return "", nil
+	}
+
+	var wordParts []JishoWordPart
+	kanaPart := ""
+	kanjiIdx := 0
+
+	for _, c := range fullWord {
+		if jptext.IsKanji(c) {
+			if kanaPart != "" {
+				wordParts = append(wordParts, JishoWordPart{
+					MainText: kanaPart,
+				})
+				kanaPart = ""
+			}
+
+			wordParts = append(wordParts, JishoWordPart{
+				MainText: string(c),
+				Reading:  furiganaInParts[kanjiIdx],
+			})
+			kanjiIdx++
+		} else {
+			kanaPart += string(c)
+		}
+	}
+
+	if kanaPart != "" {
+		wordParts = append(wordParts, JishoWordPart{
+			MainText: kanaPart,
+		})
+	}
+
+	return fullWord, wordParts
+}
+
+func (h *JishoHandler) parseWord(readingsSection *goquery.Selection) string {
+	return strings.TrimSpace(readingsSection.Find(".text").Text())
 }
 
 func (h *JishoHandler) parseKanjiSection(doc *goquery.Document) []JishoKanji {
@@ -153,14 +216,6 @@ func (h *JishoHandler) parseKanjiReadings(readingsEl *goquery.Selection) []Jisho
 	})
 
 	return readings
-}
-
-func (h *JishoHandler) parseWord(readingsSection *goquery.Selection) string {
-	return strings.TrimSpace(readingsSection.Find(".text").Text())
-}
-
-func (h *JishoHandler) parseReading(readingsSection *goquery.Selection) string {
-	return strings.TrimSpace(readingsSection.Find(".furigana").Text())
 }
 
 func (h *JishoHandler) parseMeanings(meaningSection *goquery.Selection) []JishoMeaning {

@@ -38,6 +38,15 @@ h6 {
     font-size: 1rem;
 }
 
+.word-part {
+    font-size: 2rem;
+}
+
+.furigana {
+    font-size: 1rem;
+    padding-bottom: .4rem;
+}
+
 .inline-block {
     display: inline-block;
 }
