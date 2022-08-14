@@ -9,10 +9,10 @@ services:
   omnikanji:
     build: .
     environment:
-      - VIRTUAL_HOST=omnikanji.amleczko.pl
-      - VIRTUAL_PORT=8080
-      - LETSENCRYPT_HOST=omnikanji.amleczko.pl
-      - LETSENCRYPT_EMAIL=dev@amleczko.pl
+      - VIRTUAL_HOST=
+      - VIRTUAL_PORT=
+      - LETSENCRYPT_HOST=
+      - LETSENCRYPT_EMAIL=
     networks:
       - proxy-tier
 

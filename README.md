@@ -8,7 +8,7 @@ DONE * better furigana HTML (html ruby tag)
 * server panic recovery (when not in debug mode?) - probably some contact page to me
 * site statistics (number of visitors, the most searched words)
 * some "buy me a cofee or sth"
-* public deploy
+* public deploy (REMOVE PRIVATE DATA FROM compose)
 * license
 * more dictionaries?
 

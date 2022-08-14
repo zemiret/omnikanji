@@ -1,36 +1,57 @@
-package main
+package server
 
 import (
-	"github.com/zemiret/omnikanji/jptext"
 	"html/template"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
 	"unicode/utf8"
+
+	"github.com/zemiret/omnikanji"
+	"github.com/zemiret/omnikanji/jptext"
+	"github.com/zemiret/omnikanji/pkg/logger"
 )
 
+var templates = template.Must(template.ParseFiles("index.html"))
 
-type server struct {
-	*Logger
-	kanjidmgLinks map[string]string
-	jisho         *JishoHandler
-	kanjidmg      *KanjidmgHandler
+type JishoSectionGetter interface {
+	Url(word string) string
+	Get(word string) (*omnikanji.JishoSection, error)
 }
 
-func newServer(jisho *JishoHandler, kanjidmg *KanjidmgHandler) *server {
-	return &server{
-		jisho:    jisho,
-		kanjidmg: kanjidmg,
-		Logger:   NewLogger(),
-	}
+type KanjidmgSectionGetter interface {
+	Get(kanji rune) (*omnikanji.KanjidmgSection, error)
+}
+
+type server struct {
+	*logger.Logger
+	kanjidmgLinks map[string]string
+	jisho         JishoSectionGetter
+	kanjidmg      KanjidmgSectionGetter
 }
 
 type TemplateParams struct {
-	EnglishSearchedWord string
+	EnglishSearchedWord  string
 	JishoEnglishWordLink string
-	Jisho    *JishoSection
-	Kanjidmg []*KanjidmgSection
-	Error    *string
+	Jisho                *omnikanji.JishoSection
+	Kanjidmg             []*omnikanji.KanjidmgSection
+	Error                *string
+}
+
+func NewServer(jisho JishoSectionGetter, kanjidmg KanjidmgSectionGetter) *server {
+	return &server{
+		jisho:    jisho,
+		kanjidmg: kanjidmg,
+		Logger:   logger.NewLogger(),
+	}
+}
+
+func (s *server) Start() {
+	http.HandleFunc("/", s.handleIndex)
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
+	log.Println("Starting server at localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func (s *server) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -69,10 +90,10 @@ func (s *server) searchFromEnglish(word string) *TemplateParams {
 		return &TemplateParams{}
 	}
 
-	var wordKanjis string 
+	var wordKanjis string
 	for _, c := range tParams.Jisho.WordSection.FullWord {
 		if jptext.IsKanji(c) {
-			wordKanjis += string(c)	
+			wordKanjis += string(c)
 		}
 	}
 
@@ -81,10 +102,10 @@ func (s *server) searchFromEnglish(word string) *TemplateParams {
 	}
 
 	tParams.EnglishSearchedWord = word
-	tParams.JishoEnglishWordLink = s.jisho.Url(word) 
+	tParams.JishoEnglishWordLink = s.jisho.Url(word)
 	tParams.Jisho.Link = s.jisho.Url(tParams.Jisho.WordSection.FullWord) // overwrite english word link
 
-	return &tParams 
+	return &tParams
 }
 
 func (s *server) searchFromJapanese(word string) *TemplateParams {
@@ -105,7 +126,6 @@ func (s *server) getSections(word string, parseKanjis bool) *TemplateParams {
 		}
 	}
 
-
 	wg.Wait()
 	return &tParams
 }
@@ -114,30 +134,30 @@ func (s *server) doJishoSearch(wg *sync.WaitGroup, tParams *TemplateParams, word
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		jishoSection, err := s.jisho.GetSection(word)
-		if err == nil {
-			tParams.Jisho = jishoSection
-		} else {
+		jishoSection, err := s.jisho.Get(word)
+		if err != nil {
 			s.Errorf(err, "error getting jisho section")
+			return
 		}
+		tParams.Jisho = jishoSection
 	}()
 }
 
 func (s *server) doKanjidmgSearch(tParams *TemplateParams, word string) {
 	var wg sync.WaitGroup
 
-	results := make([]*KanjidmgSection, utf8.RuneCountInString(word))
+	results := make([]*omnikanji.KanjidmgSection, utf8.RuneCountInString(word))
 	idx := 0
 	for _, c := range word {
 		wg.Add(1)
 		go func(i int, c rune) {
 			defer wg.Done()
-			sect, err := s.kanjidmg.GetSection(c)
-			if err == nil {
-				results[i] = sect
-			} else {
+			sect, err := s.kanjidmg.Get(c)
+			if err != nil {
 				s.Errorf(err, "error getting kanjidmg section")
+				return
 			}
+			results[i] = sect
 		}(idx, c)
 		idx++
 	}
@@ -155,8 +175,6 @@ func (s *server) errorParams(msg string) *TemplateParams {
 }
 
 func (s *server) renderTemplate(w http.ResponseWriter, data *TemplateParams) {
-	var templates = template.Must(template.ParseFiles("index.html"))
-
 	err := templates.ExecuteTemplate(w, "index.html", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

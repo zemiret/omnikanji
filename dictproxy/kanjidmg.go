@@ -1,62 +1,71 @@
-package main
+package dictproxy
 
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/zemiret/omnikanji/ptr"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/zemiret/omnikanji"
+	"github.com/zemiret/omnikanji/pkg/ptr"
 )
 
 var (
 	KanjidmgNoKanjiErr = fmt.Errorf("kanji not found at kanjidamage")
 )
 
-type KanjidmgHandler struct {
-	links map[string]string
+func LoadKanjidmgLinks(httpClient HttpClient) (map[string]string, error) {
+	resp, err := httpClient.Get(omnikanji.KanjidmgListUrl)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	links := make(map[string]string)
+
+	doc.Find(".container .row table tr").Each(func(_ int, el *goquery.Selection) {
+		link := el.Find("td:nth-child(3) a").First()
+
+		if href, ok := link.Attr("href"); ok {
+			links[link.Text()] = omnikanji.KanjidmgBaseUrl + href
+		}
+	})
+
+	return links, nil
 }
 
-func NewKanjidmgHandler(links map[string]string) *KanjidmgHandler {
-	return &KanjidmgHandler{
-		links: links,
+type Kanjidmg struct {
+	links      map[string]string
+	httpClient HttpClient
+}
+
+func NewKanjidmg(links map[string]string, httpClient HttpClient) *Kanjidmg {
+	return &Kanjidmg{
+		links:      links,
+		httpClient: httpClient,
 	}
 }
 
-type KanjidmgSection struct {
-	WordSection KanjidmgKanji
-	TopComment  *string
-	Radicals    []KanjidmgKanji
-	Onyomi      *string
-	Mnemonic    *string
-	Mutants     []KanjidmgKanji
-
-	// Kunyomi TODO
-	//Jukugo  TODO
-	// UsedIn TODO
-	// Synonyms TODO
-	// Lookalikes TODO
-}
-
-type KanjidmgKanji struct {
-	Kanji      *string
-	KanjiImage *string
-	Meaning    string
-	Link       string
-}
-
-func (h *KanjidmgHandler) url(kanji string) string {
+func (h *Kanjidmg) url(kanji string) string {
 	return h.links[kanji]
 }
 
-func (h *KanjidmgHandler) GetSection(kanji rune) (*KanjidmgSection, error) {
+func (h *Kanjidmg) Get(kanji rune) (*omnikanji.KanjidmgSection, error) {
 	url := h.url(string(kanji))
 	if url == "" {
 		return nil, KanjidmgNoKanjiErr
 	}
 
-	resp, err := http.Get(url)
+	resp, err := h.httpClient.Get(url)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
@@ -72,13 +81,13 @@ func (h *KanjidmgHandler) GetSection(kanji rune) (*KanjidmgSection, error) {
 	return sect, nil
 }
 
-func (h *KanjidmgHandler) parseResponse(resp *http.Response, url string) (*KanjidmgSection, error) {
+func (h *Kanjidmg) parseResponse(resp *http.Response, url string) (*omnikanji.KanjidmgSection, error) {
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	sect := &KanjidmgSection{}
+	sect := &omnikanji.KanjidmgSection{}
 
 	rows := doc.Find(".container").Last().Find(".row")
 	wordSection := rows.Eq(1)
@@ -104,7 +113,7 @@ func (h *KanjidmgHandler) parseResponse(resp *http.Response, url string) (*Kanji
 	return sect, nil
 }
 
-func (h *KanjidmgHandler) buildWordSection(wordSection *goquery.Selection, url string) (*KanjidmgKanji, error) {
+func (h *Kanjidmg) buildWordSection(wordSection *goquery.Selection, url string) (*omnikanji.KanjidmgKanji, error) {
 	res, err := h.parseWordSection(wordSection)
 	if err != nil {
 		return nil, err
@@ -113,14 +122,14 @@ func (h *KanjidmgHandler) buildWordSection(wordSection *goquery.Selection, url s
 	return res, nil
 }
 
-func (h *KanjidmgHandler) parseWordSection(wordSection *goquery.Selection) (*KanjidmgKanji, error) {
+func (h *Kanjidmg) parseWordSection(wordSection *goquery.Selection) (*omnikanji.KanjidmgKanji, error) {
 	kanjiCharSection := wordSection.Find("h1 .kanji_character")
 	kanjiStr, kanjiImg, err := h.kanjiTextOrImage(kanjiCharSection)
 	if err != nil {
 		return nil, err
 	}
 
-	return &KanjidmgKanji{
+	return &omnikanji.KanjidmgKanji{
 		Kanji:      kanjiStr,
 		KanjiImage: kanjiImg,
 		Meaning:    wordSection.Find("h1 .translation").Text(),
@@ -128,7 +137,7 @@ func (h *KanjidmgHandler) parseWordSection(wordSection *goquery.Selection) (*Kan
 
 }
 
-func (h *KanjidmgHandler) kanjiTextOrImage(kanjiCharSection *goquery.Selection) (*string, *string, error) {
+func (h *Kanjidmg) kanjiTextOrImage(kanjiCharSection *goquery.Selection) (*string, *string, error) {
 	var kanjiStr, kanjiImg string
 	var err error
 
@@ -148,8 +157,8 @@ func (h *KanjidmgHandler) kanjiTextOrImage(kanjiCharSection *goquery.Selection) 
 	return ptr.String(kanjiStr), ptr.String(kanjiImg), nil
 }
 
-func (h *KanjidmgHandler) fetchKanjiImg(url string) (string, error) {
-	resp, err := http.Get(kanjidmgBaseUrl + "/" + url)
+func (h *Kanjidmg) fetchKanjiImg(url string) (string, error) {
+	resp, err := h.httpClient.Get(omnikanji.KanjidmgBaseUrl + "/" + url)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
@@ -166,7 +175,7 @@ func (h *KanjidmgHandler) fetchKanjiImg(url string) (string, error) {
 	return encodedImg, nil
 }
 
-func (h *KanjidmgHandler) parseRadicals(radicalsSection *goquery.Selection) (radicals []KanjidmgKanji, err error) {
+func (h *Kanjidmg) parseRadicals(radicalsSection *goquery.Selection) (radicals []omnikanji.KanjidmgKanji, err error) {
 	radicalsSection.Find("h1").Remove()
 
 	radicalsLinks := radicalsSection.Find("a")
@@ -184,11 +193,11 @@ func (h *KanjidmgHandler) parseRadicals(radicalsSection *goquery.Selection) (rad
 				return
 			}
 
-			radicals = append(radicals, KanjidmgKanji{
+			radicals = append(radicals, omnikanji.KanjidmgKanji{
 				Kanji:      kanjiStr,
 				KanjiImage: kanjiImg,
 				Meaning:    meaningText,
-				Link:       kanjidmgBaseUrl + "/" + radicalsLinks.Eq(usedLinks).AttrOr("href", ""),
+				Link:       omnikanji.KanjidmgBaseUrl + "/" + radicalsLinks.Eq(usedLinks).AttrOr("href", ""),
 			})
 			usedLinks += 1
 		}
@@ -197,18 +206,18 @@ func (h *KanjidmgHandler) parseRadicals(radicalsSection *goquery.Selection) (rad
 	return
 }
 
-func (h *KanjidmgHandler) trimNotCharacters(text string) string {
+func (h *Kanjidmg) trimNotCharacters(text string) string {
 	return strings.Trim(text, "+_-=,.:;'\"/|\\][() \t\n!?@$#%*")
 }
 
-func (h *KanjidmgHandler) parseOnyomi(contentSection *goquery.Selection) string {
+func (h *Kanjidmg) parseOnyomi(contentSection *goquery.Selection) string {
 	return h.parseContentRow(contentSection, "Onyomi")
 }
 
-func (h *KanjidmgHandler) parseMnemonic(contentSection *goquery.Selection) string {
+func (h *Kanjidmg) parseMnemonic(contentSection *goquery.Selection) string {
 	return h.parseContentRow(contentSection, "Mnemonic")
 }
 
-func (h *KanjidmgHandler) parseContentRow(section *goquery.Selection, sectionHeader string) string {
+func (h *Kanjidmg) parseContentRow(section *goquery.Selection, sectionHeader string) string {
 	return h.trimNotCharacters(section.Find("h2:contains(" + sectionHeader + ")").Next().Text())
 }

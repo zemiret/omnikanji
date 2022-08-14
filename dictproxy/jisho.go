@@ -1,4 +1,4 @@
-package main
+package dictproxy
 
 import (
 	"fmt"
@@ -6,59 +6,26 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/zemiret/omnikanji"
 	"github.com/zemiret/omnikanji/jptext"
 )
 
-type JishoHandler struct {
-	searchUrl string
+type Jisho struct {
+	searchUrl  string
+	httpClient HttpClient
 }
 
-func NewJishoHandler(jishoSearchUrl string) *JishoHandler {
-	return &JishoHandler{searchUrl: jishoSearchUrl}
+func NewJisho(jishoSearchUrl string, httpClient HttpClient) *Jisho {
+	return &Jisho{
+		searchUrl:  jishoSearchUrl,
+		httpClient: httpClient,
+	}
 }
 
-type JishoSection struct {
-	Link        string
-	WordSection JishoWordSection
-	Kanjis      []JishoKanji
-}
-
-type JishoWordSection struct {
-	FullWord string
-	Parts    []JishoWordPart
-	Meanings []JishoMeaning
-	//Notes *string
-}
-
-type JishoWordPart struct {
-	MainText string
-	Reading  string // Reading can be empty in case it's not a kanji
-}
-
-type JishoMeaning struct {
-	ListItem
-	Meaning string
-	Tags    *string
-	//MeaningSentence  *string
-	//SupplementalInfo *string
-}
-
-type JishoKanji struct {
-	Kanji    JishoWordWithLink
-	Meaning  string
-	Kunyomis []JishoWordWithLink
-	Onyomis  []JishoWordWithLink
-}
-
-type JishoWordWithLink struct {
-	Link string
-	Word string
-}
-
-func (h *JishoHandler) GetSection(word string) (*JishoSection, error) {
+func (h *Jisho) Get(word string) (*omnikanji.JishoSection, error) {
 	url := h.Url(word)
 
-	resp, err := http.Get(url)
+	resp, err := h.httpClient.Get(url)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
@@ -77,11 +44,11 @@ func (h *JishoHandler) GetSection(word string) (*JishoSection, error) {
 	return sect, nil
 }
 
-func (h *JishoHandler) Url(word string) string {
+func (h *Jisho) Url(word string) string {
 	return h.searchUrl + word
 }
 
-func (h *JishoHandler) parseResponse(resp *http.Response) (*JishoSection, error) {
+func (h *Jisho) parseResponse(resp *http.Response) (*omnikanji.JishoSection, error) {
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
 		return nil, err
@@ -94,14 +61,14 @@ func (h *JishoHandler) parseResponse(resp *http.Response) (*JishoSection, error)
 
 	kanjis := h.parseKanjiSection(doc)
 
-	return &JishoSection{
+	return &omnikanji.JishoSection{
 		WordSection: *wordSection,
 		Kanjis:      kanjis,
 	}, nil
 }
 
-func (h *JishoHandler) parseWordSection(doc *goquery.Document) *JishoWordSection {
-	var wordSection JishoWordSection
+func (h *Jisho) parseWordSection(doc *goquery.Document) *omnikanji.JishoWordSection {
+	var wordSection omnikanji.JishoWordSection
 
 	wordSectionEl := doc.Find(".concept_light").First()
 	if wordSectionEl.Length() == 0 {
@@ -110,16 +77,13 @@ func (h *JishoHandler) parseWordSection(doc *goquery.Document) *JishoWordSection
 	readingsSection := wordSectionEl.Find(".concept_light-wrapper .concept_light-readings").First()
 	meaningSection := wordSectionEl.Find(".meanings-wrapper").First()
 
-	// wordSection.Word = h.parseWord(readingsSection)
-	// wordSection.Reading = h.parseReading(readingsSection)
-
 	wordSection.FullWord, wordSection.Parts = h.parseWordParts(readingsSection)
 	wordSection.Meanings = h.parseMeanings(meaningSection)
 
 	return &wordSection
 }
 
-func (h *JishoHandler) parseWordParts(wordSection *goquery.Selection) (string, []JishoWordPart) {
+func (h *Jisho) parseWordParts(wordSection *goquery.Selection) (string, []omnikanji.JishoWordPart) {
 	fullWord := h.parseWord(wordSection)
 	var furiganaInParts []string
 	wordSection.Find(".furigana .kanji").Each(func(_ int, el *goquery.Selection) {
@@ -137,20 +101,20 @@ func (h *JishoHandler) parseWordParts(wordSection *goquery.Selection) (string, [
 		return "", nil
 	}
 
-	var wordParts []JishoWordPart
+	var wordParts []omnikanji.JishoWordPart
 	kanaPart := ""
 	kanjiIdx := 0
 
 	for _, c := range fullWord {
 		if jptext.IsKanji(c) {
 			if kanaPart != "" {
-				wordParts = append(wordParts, JishoWordPart{
+				wordParts = append(wordParts, omnikanji.JishoWordPart{
 					MainText: kanaPart,
 				})
 				kanaPart = ""
 			}
 
-			wordParts = append(wordParts, JishoWordPart{
+			wordParts = append(wordParts, omnikanji.JishoWordPart{
 				MainText: string(c),
 				Reading:  furiganaInParts[kanjiIdx],
 			})
@@ -161,7 +125,7 @@ func (h *JishoHandler) parseWordParts(wordSection *goquery.Selection) (string, [
 	}
 
 	if kanaPart != "" {
-		wordParts = append(wordParts, JishoWordPart{
+		wordParts = append(wordParts, omnikanji.JishoWordPart{
 			MainText: kanaPart,
 		})
 	}
@@ -169,11 +133,11 @@ func (h *JishoHandler) parseWordParts(wordSection *goquery.Selection) (string, [
 	return fullWord, wordParts
 }
 
-func (h *JishoHandler) parseWord(readingsSection *goquery.Selection) string {
+func (h *Jisho) parseWord(readingsSection *goquery.Selection) string {
 	return strings.TrimSpace(readingsSection.Find(".text").Text())
 }
 
-func (h *JishoHandler) parseKanjiSection(doc *goquery.Document) []JishoKanji {
+func (h *Jisho) parseKanjiSection(doc *goquery.Document) []omnikanji.JishoKanji {
 	kanjiSectionEl := doc.Find("#secondary .kanji_light_block").First()
 	if kanjiSectionEl.Length() == 0 {
 		return nil
@@ -181,8 +145,8 @@ func (h *JishoHandler) parseKanjiSection(doc *goquery.Document) []JishoKanji {
 	return h.parseKanjis(kanjiSectionEl)
 }
 
-func (h *JishoHandler) parseKanjis(kanjiSection *goquery.Selection) []JishoKanji {
-	var kanjis []JishoKanji
+func (h *Jisho) parseKanjis(kanjiSection *goquery.Selection) []omnikanji.JishoKanji {
+	var kanjis []omnikanji.JishoKanji
 
 	kanjiSection.Find(".kanji_light_content").Each(func(_ int, el *goquery.Selection) {
 		kanjiLink := el.Find(".literal_block .character a")
@@ -192,8 +156,8 @@ func (h *JishoHandler) parseKanjis(kanjiSection *goquery.Selection) []JishoKanji
 		onyomisEl := el.Find(".on").First()
 		onyomisEl.Find(".type").Remove()
 
-		kanjis = append(kanjis, JishoKanji{
-			Kanji: JishoWordWithLink{
+		kanjis = append(kanjis, omnikanji.JishoKanji{
+			Kanji: omnikanji.JishoWordWithLink{
 				Link: kanjiLink.AttrOr("href", ""),
 				Word: kanjiLink.Text(),
 			},
@@ -206,10 +170,10 @@ func (h *JishoHandler) parseKanjis(kanjiSection *goquery.Selection) []JishoKanji
 	return kanjis
 }
 
-func (h *JishoHandler) parseKanjiReadings(readingsEl *goquery.Selection) []JishoWordWithLink {
-	var readings []JishoWordWithLink
+func (h *Jisho) parseKanjiReadings(readingsEl *goquery.Selection) []omnikanji.JishoWordWithLink {
+	var readings []omnikanji.JishoWordWithLink
 	readingsEl.Find("a").Each(func(_ int, el *goquery.Selection) {
-		readings = append(readings, JishoWordWithLink{
+		readings = append(readings, omnikanji.JishoWordWithLink{
 			Link: el.AttrOr("href", ""),
 			Word: el.Text(),
 		})
@@ -218,8 +182,8 @@ func (h *JishoHandler) parseKanjiReadings(readingsEl *goquery.Selection) []Jisho
 	return readings
 }
 
-func (h *JishoHandler) parseMeanings(meaningSection *goquery.Selection) []JishoMeaning {
-	var meanings []JishoMeaning
+func (h *Jisho) parseMeanings(meaningSection *goquery.Selection) []omnikanji.JishoMeaning {
+	var meanings []omnikanji.JishoMeaning
 
 	lastTag := ""
 	idx := 1
@@ -227,7 +191,7 @@ func (h *JishoHandler) parseMeanings(meaningSection *goquery.Selection) []JishoM
 		if el.HasClass("meaning-tags") {
 			lastTag = strings.TrimSpace(el.Text())
 		} else if el.HasClass("meaning-wrapper") {
-			var jishoMeaning JishoMeaning
+			var jishoMeaning omnikanji.JishoMeaning
 			jishoMeaning.Meaning = strings.TrimSpace(el.Find(".meaning-meaning").Text())
 			if lastTag != "" {
 				t := lastTag
