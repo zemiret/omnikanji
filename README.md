@@ -6,9 +6,10 @@ DONE * better furigana HTML (html ruby tag)
 * bigger search field (css)
 * cache'ing (simple, in-memory, sth like cache 1000 most hot results, maybe some jisho tags could be useful)
 * server panic recovery (when not in debug mode?) - probably some contact page to me
-* site statistics (number of visitors, etc.)
+* site statistics (number of visitors, the most searched words)
 * some "buy me a cofee or sth"
 * public deploy
+* license
 * more dictionaries?
 
 Words for testing:
