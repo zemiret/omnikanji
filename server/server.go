@@ -13,7 +13,7 @@ import (
 	"github.com/zemiret/omnikanji/pkg/logger"
 )
 
-var templates = template.Must(template.ParseFiles("index.html"))
+var templates = template.Must(template.ParseFiles("server/index.html"))
 
 type JishoSectionGetter interface {
 	Url(word string) string
