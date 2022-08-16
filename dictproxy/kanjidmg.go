@@ -55,12 +55,12 @@ func NewKanjidmg(links map[string]string, httpClient HttpClient) *Kanjidmg {
 	}
 }
 
-func (h *Kanjidmg) url(kanji string) string {
+func (h *Kanjidmg) Url(kanji string) string {
 	return h.links[kanji]
 }
 
 func (h *Kanjidmg) Get(kanji rune) (*omnikanji.KanjidmgSection, error) {
-	url := h.url(string(kanji))
+	url := h.Url(string(kanji))
 	if url == "" {
 		return nil, KanjidmgNoKanjiErr
 	}

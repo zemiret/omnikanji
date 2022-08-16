@@ -1,13 +1,5 @@
 package omnikanji
 
-
-const (
-	JishoSearchUrl = "https://jisho.org/search/"
-
-	KanjidmgBaseUrl = "http://www.kanjidamage.com"
-	KanjidmgListUrl = KanjidmgBaseUrl + "/kanji"
-)
-
 type JishoSection struct {
 	Link        string
 	WordSection JishoWordSection
@@ -49,7 +41,6 @@ type JishoWordWithLink struct {
 	Link string
 	Word string
 }
-
 
 type KanjidmgSection struct {
 	WordSection KanjidmgKanji
