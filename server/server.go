@@ -64,7 +64,7 @@ func (s *server) handleIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
-	word := r.URL.Query().Get("word")
+	word := r.URL.Query().Get(omnikanji.QuerySearchKey)
 	if word == "" {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
