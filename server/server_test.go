@@ -2,16 +2,13 @@ package server
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/zemiret/omnikanji"
-	"github.com/zemiret/omnikanji/dictproxy"
 	"github.com/zemiret/omnikanji/jptext"
 )
 
@@ -72,24 +69,24 @@ func TestServer(t *testing.T) {
 		word string
 	}
 
-	run := func(tc *TestCase) func(t *testing.T) {
-		return func(t *testing.T) {
-			httpClient := NewHttpClientMock("testdata")
-			jisho := dictproxy.NewJisho(omnikanji.JishoSearchUrl, httpClient)
-			kanjidmg := dictproxy.NewKanjidmg(kanjidmgLinks, httpClient)
-			srv := NewServer(jisho, kanjidmg)
+	// run := func(tc *TestCase) func(t *testing.T) {
+	// 	return func(t *testing.T) {
+	// httpClient := NewHttpClientMock("testdata")
+	// jisho := dictproxy.NewJisho(omnikanji.JishoSearchUrl, httpClient)
+	// kanjidmg := dictproxy.NewKanjidmg(kanjidmgLinks, httpClient)
+	// srv := NewServer(jisho, kanjidmg)
 
-			// TODO: Alright, not 100% sure this is the best way to call this
+	// TODO: Alright, not 100% sure this is the best way to call this. Take a look at httptest packge!
 
-			req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("localhost:8080/search/?word=%s", tc.word), nil)
-			if err != nil {
-				t.Fatalf("http.NewRequest: %s", err)
-			}
+	// req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("localhost:8080/search/?word=%s", tc.word), nil)
+	// if err != nil {
+	// 	t.Fatalf("http.NewRequest: %s", err)
+	// }
 
-			// TODO: We will need one step more ins server to get pure data here, and not the rendered template
-			// Idea: We can add a wrapper in server over current handlers (and add it in handlers) that will call render template on the provided data
+	// TODO: We will need one step more ins server to get pure data here, and not the rendered template
+	// Idea: We can add a wrapper in server over current handlers (and add it in handlers) that will call render template on the provided data
 
-			srv.handleIndex()
-		}
-	}
+	// srv.handleIndex()
+	// }
+	// }
 }
