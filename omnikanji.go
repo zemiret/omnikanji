@@ -44,11 +44,11 @@ type JishoWordWithLink struct {
 
 type KanjidmgSection struct {
 	WordSection KanjidmgKanji
-	TopComment  *string
-	Radicals    []KanjidmgKanji
-	Onyomi      *string
-	Mnemonic    *string
-	Mutants     []KanjidmgKanji
+	// TopComment  *string
+	Radicals []KanjidmgKanji
+	Onyomi   *string
+	Mnemonic *string
+	// Mutants     []KanjidmgKanji
 
 	// Kunyomi TODO
 	//Jukugo  TODO

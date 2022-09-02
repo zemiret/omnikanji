@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 	"unicode/utf8"
@@ -13,7 +14,18 @@ import (
 	"github.com/zemiret/omnikanji/pkg/logger"
 )
 
-var templates = template.Must(template.ParseFiles("server/index.html"))
+var indexTemplate *template.Template
+
+func init() {
+	idxTplPath, err := filepath.Abs("index.html")
+	if err != nil {
+		panic(err)
+	}
+
+	indexTemplate = template.Must(template.ParseFiles(idxTplPath))
+}
+
+type TemplateDataGetHandler func(w http.ResponseWriter, r *http.Request) *TemplateParams
 
 type JishoSectionGetter interface {
 	Url(word string) string
@@ -48,36 +60,32 @@ func NewServer(jisho JishoSectionGetter, kanjidmg KanjidmgSectionGetter) *server
 }
 
 func (s *server) Start() {
-	http.HandleFunc("/", s.handleIndex)
+	http.HandleFunc("/", s.renderWrapper(s.HandleIndex))
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	log.Println("Starting server at localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func (s *server) handleIndex(w http.ResponseWriter, r *http.Request) {
+func (s *server) HandleIndex(w http.ResponseWriter, r *http.Request) *TemplateParams {
 	if strings.HasPrefix(r.URL.Path, "/search/") {
-		s.handleSearch(w, r)
-		return
+		return s.handleSearch(w, r)
 	}
 
-	s.renderTemplate(w, nil)
+	return nil
 }
 
-func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
+func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) *TemplateParams {
 	word := r.URL.Query().Get(omnikanji.QuerySearchKey)
 	if word == "" {
 		http.Redirect(w, r, "/", http.StatusFound)
-		return
+		return nil
 	}
 
 	if !jptext.IsJapaneseWord(word) {
-		data := s.searchFromEnglish(word)
-		s.renderTemplate(w, data)
-		return
+		return s.searchFromEnglish(word)
 	}
 
-	data := s.searchFromJapanese(word)
-	s.renderTemplate(w, data)
+	return s.searchFromJapanese(word)
 }
 
 func (s *server) searchFromEnglish(word string) *TemplateParams {
@@ -175,8 +183,15 @@ func (s *server) errorParams(msg string) *TemplateParams {
 }
 
 func (s *server) renderTemplate(w http.ResponseWriter, data *TemplateParams) {
-	err := templates.ExecuteTemplate(w, "index.html", data)
+	err := indexTemplate.ExecuteTemplate(w, "index.html", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (s *server) renderWrapper(h TemplateDataGetHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data := h(w, r)
+		s.renderTemplate(w, data)
 	}
 }

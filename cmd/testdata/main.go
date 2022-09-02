@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	log.Println("Loading testdata")
+	log.Println("Loading fixture")
 
 	httpClient := http.NewClient()
 	kanjidmgLinks, err := dictproxy.LoadKanjidmgLinks(httpClient)
@@ -24,11 +24,11 @@ func main() {
 	kanjidmg := dictproxy.NewKanjidmg(kanjidmgLinks, httpClient)
 	jisho := dictproxy.NewJisho(omnikanji.JishoSearchUrl, httpClient)
 
-	serverTestdataDir := "./server/testdata"
-	if err := os.MkdirAll(fmt.Sprintf("%s/jisho", serverTestdataDir), os.ModePerm); err != nil {
+	serverFixtureDir := "./server/fixture"
+	if err := os.MkdirAll(fmt.Sprintf("%s/jisho", serverFixtureDir), os.ModePerm); err != nil {
 		log.Fatalf("os.Mkdir: %s", err)
 	}
-	if err := os.MkdirAll(fmt.Sprintf("%s/kanjidmg", serverTestdataDir), os.ModePerm); err != nil {
+	if err := os.MkdirAll(fmt.Sprintf("%s/kanjidmg", serverFixtureDir), os.ModePerm); err != nil {
 		log.Fatalf("os.Mkdir: %s", err)
 	}
 
@@ -50,7 +50,7 @@ func main() {
 			log.Fatalf("Error getting %s: %s", word, err)
 		}
 		defer resp.Body.Close()
-		fn := fmt.Sprintf("%s/jisho/%s.html", serverTestdataDir, word)
+		fn := fmt.Sprintf("%s/jisho/%s.html", serverFixtureDir, word)
 		f, err := os.Create(fn)
 		if err != nil {
 			log.Fatalf("os.Create: %s: %s", fn, err)
@@ -67,7 +67,7 @@ func main() {
 				log.Fatalf("Error getting %s: %s", word, err)
 			}
 			defer resp.Body.Close()
-			fn := fmt.Sprintf("%s/kanjidmg/%s.html", serverTestdataDir, string(r))
+			fn := fmt.Sprintf("%s/kanjidmg/%s.html", serverFixtureDir, string(r))
 			f, err := os.Create(fn)
 			if err != nil {
 				log.Fatalf("os.Create: %s: %s", fn, err)
