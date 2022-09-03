@@ -107,21 +107,19 @@ func (s *server) searchFromEnglish(word string) *TemplateParams {
 }
 
 func (s *server) searchFromJapanese(word string) *TemplateParams {
-	data := s.getSections(word, true)
+	data := s.getSections(word)
 	return data
 }
 
-func (s *server) getSections(word string, parseKanjis bool) *TemplateParams {
+func (s *server) getSections(word string) *TemplateParams {
 	var tParams TemplateParams
 	var wg sync.WaitGroup
 
 	s.doJishoSearch(&wg, &tParams, word)
 
-	if parseKanjis {
-		wordKanjis := jptext.ExtractKanjis(word)
-		if wordKanjis != "" {
-			s.doKanjidmgSearch(&tParams, wordKanjis)
-		}
+	wordKanjis := jptext.ExtractKanjis(word)
+	if wordKanjis != "" {
+		s.doKanjidmgSearch(&tParams, wordKanjis)
 	}
 
 	wg.Wait()

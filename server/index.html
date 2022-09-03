@@ -51,15 +51,19 @@
                 <div class="flex-col flex-align-start margin-bot-sm">
                     <div class="flex-col flex-align-center">
                         <span>
-                        {{ range $idx, $w := .Jisho.WordSection.Parts }}
-                            {{ if ne $w.Reading "" }}
-                            <ruby class="word-part">
-                                {{$w.MainText}}
-                                <rp>(</rp><rt class="furigana">{{$w.Reading}}</rt><rp>)</rp>
-                            </ruby>
-                            {{ else }}
-                                <span class="word-part">{{$w.MainText}}</span>
+                        {{ if .Jisho.WordSection.Parts }}
+                            {{ range $idx, $w := .Jisho.WordSection.Parts }}
+                                {{ if ne $w.Reading "" }}
+                                <ruby class="word-part">
+                                    {{$w.MainText}}
+                                    <rp>(</rp><rt class="furigana">{{$w.Reading}}</rt><rp>)</rp>
+                                </ruby>
+                                {{ else }}
+                                    <span class="word-part">{{$w.MainText}}</span>
+                                {{ end }}
                             {{ end }}
+                        {{ else }}
+                            <span class="word-part">{{.Jisho.WordSection.FullWord}}</span>
                         {{ end }}
                         </span>
                     </div>

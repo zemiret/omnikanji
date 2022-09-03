@@ -41,6 +41,11 @@ func (h *Jisho) Get(word string) (*omnikanji.JishoSection, error) {
 	}
 	sect.Link = url
 
+	// There are some jisho words that do not split niceliy into parts. Faillback
+	if sect.WordSection.FullWord == "" && jptext.IsJapaneseWord(word) {
+		sect.WordSection.FullWord = word
+	}
+
 	return sect, nil
 }
 
