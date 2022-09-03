@@ -4,7 +4,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"path/filepath"
 	"strings"
 	"sync"
 	"unicode/utf8"
@@ -13,17 +12,6 @@ import (
 	"github.com/zemiret/omnikanji/jptext"
 	"github.com/zemiret/omnikanji/pkg/logger"
 )
-
-var indexTemplate *template.Template
-
-func init() {
-	idxTplPath, err := filepath.Abs("index.html")
-	if err != nil {
-		panic(err)
-	}
-
-	indexTemplate = template.Must(template.ParseFiles(idxTplPath))
-}
 
 type TemplateDataGetHandler func(w http.ResponseWriter, r *http.Request) *TemplateParams
 
@@ -38,6 +26,7 @@ type KanjidmgSectionGetter interface {
 
 type server struct {
 	*logger.Logger
+	indexTemplate *template.Template
 	kanjidmgLinks map[string]string
 	jisho         JishoSectionGetter
 	kanjidmg      KanjidmgSectionGetter
@@ -51,11 +40,12 @@ type TemplateParams struct {
 	Error                *string
 }
 
-func NewServer(jisho JishoSectionGetter, kanjidmg KanjidmgSectionGetter) *server {
+func NewServer(indexTemplate *template.Template, jisho JishoSectionGetter, kanjidmg KanjidmgSectionGetter) *server {
 	return &server{
-		jisho:    jisho,
-		kanjidmg: kanjidmg,
-		Logger:   logger.NewLogger(),
+		indexTemplate: indexTemplate,
+		jisho:         jisho,
+		kanjidmg:      kanjidmg,
+		Logger:        logger.NewLogger(),
 	}
 }
 
@@ -183,7 +173,7 @@ func (s *server) errorParams(msg string) *TemplateParams {
 }
 
 func (s *server) renderTemplate(w http.ResponseWriter, data *TemplateParams) {
-	err := indexTemplate.ExecuteTemplate(w, "index.html", data)
+	err := s.indexTemplate.ExecuteTemplate(w, "index.html", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

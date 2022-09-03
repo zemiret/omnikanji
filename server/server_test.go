@@ -369,7 +369,7 @@ func TestServer(t *testing.T) {
 			httpClient := NewHttpClientMock(fixtureDir)
 			jisho := dictproxy.NewJisho(omnikanji.JishoSearchUrl, httpClient)
 			kanjidmg := dictproxy.NewKanjidmg(kanjidmgLinks, httpClient)
-			srv := server.NewServer(jisho, kanjidmg)
+			srv := server.NewServer(nil, jisho, kanjidmg)
 
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("http://localhost:8080/search/?word=%s", tc.word), nil)
 
