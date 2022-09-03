@@ -2,7 +2,7 @@
 DONE * fix omnikanji radicals
 DONE * reverse lookup (eng -> japanese)
 DONE * better furigana HTML (html ruby tag)
-* tests. It really be easier having them I think (maybe a few e2e will do for all)
+DONE * tests. It really be easier having them I think (maybe a few e2e will do for all)
 * bigger search field (css)
 * cache'ing (simple, in-memory, sth like cache 1000 most hot results, maybe some jisho tags could be useful)
 * server panic recovery (when not in debug mode?) - probably some contact page to me

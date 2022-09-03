@@ -88,12 +88,16 @@ func (s *server) searchFromEnglish(word string) *TemplateParams {
 		return &TemplateParams{}
 	}
 
+	log.Println("Search from english")
+
 	var wordKanjis string
 	for _, c := range tParams.Jisho.WordSection.FullWord {
 		if jptext.IsKanji(c) {
 			wordKanjis += string(c)
 		}
 	}
+
+	log.Println("WOrd kanjis: ", wordKanjis)
 
 	if wordKanjis != "" {
 		s.doKanjidmgSearch(&tParams, wordKanjis)

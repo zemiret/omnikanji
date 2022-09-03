@@ -32,6 +32,8 @@ func NewHttpClientMock(staticDir string) *HttpClientMock {
 }
 
 func (c *HttpClientMock) Get(searchUrl string) (*http.Response, error) {
+	log.Println("Mock Get url: ", searchUrl)
+
 	var filePath string
 
 	if strings.HasPrefix(searchUrl, omnikanji.JishoSearchUrl) {
@@ -964,36 +966,121 @@ func TestServer(t *testing.T) {
 					  }
 					]
 				  },
-				  "Kanjis": "WRONG! THS SHOULD NOT BE NULL" 
+				  "Kanjis": null
 				},
-				"Kanjidmg": "WRONG! THS SHOULD NOT BE NULL",
+				"Kanjidmg": [
+				  {
+					"WordSection": {
+					  "Kanji": "運",
+					  "KanjiImage": null,
+					  "Meaning": "carry / luck",
+					  "Link": "http://www.kanjidamage.com運"
+					},
+					"Radicals": [
+					  {
+						"Kanji": null,
+						"KanjiImage": "aW1hZ2VieXRlcw==",
+						"Meaning": "motion",
+						"Link": "http://www.kanjidamage.com//kanji/327-motion"
+					  },
+					  {
+						"Kanji": "軍",
+						"KanjiImage": null,
+						"Meaning": "army",
+						"Link": "http://www.kanjidamage.com//kanji/1068-army-%E8%BB%8D"
+					  }
+					],
+					"Onyomi": "UN",
+					"Mnemonic": "I wish the army luck when they move forward with their campaign - hopefully they only meet UN-armed civilians"
+				  },
+				  {
+					"WordSection": {
+					  "Kanji": "転",
+					  "KanjiImage": null,
+					  "Meaning": "roll over",
+					  "Link": "http://www.kanjidamage.com転"
+					},
+					"Radicals": [
+					  {
+						"Kanji": "車",
+						"KanjiImage": null,
+						"Meaning": "car",
+						"Link": "http://www.kanjidamage.com//kanji/1058-car-%E8%BB%8A"
+					  },
+					  {
+						"Kanji": "云",
+						"KanjiImage": null,
+						"Meaning": "twin decapited cows",
+						"Link": "http://www.kanjidamage.com//kanji/1265-twin-decapited-cows-%E4%BA%91"
+					  }
+					],
+					"Onyomi": "TEN",
+					"Mnemonic": "The car rolled over the twin cows TEN times, decapitating them"
+				  },
+				  {
+					"WordSection": {
+					  "Kanji": "免",
+					  "KanjiImage": null,
+					  "Meaning": "exemption / license",
+					  "Link": "http://www.kanjidamage.com免"
+					},
+					"Radicals": [
+					  {
+						"Kanji": null,
+						"KanjiImage": "aW1hZ2VieXRlcw==",
+						"Meaning": "bait",
+						"Link": "http://www.kanjidamage.com//kanji/1209-bait"
+					  },
+					  {
+						"Kanji": null,
+						"KanjiImage": "aW1hZ2VieXRlcw==",
+						"Meaning": "human legs",
+						"Link": "http://www.kanjidamage.com//kanji/519-human-legs"
+					  }
+					],
+					"Onyomi": "MEN\n\n\nMEN have a license to urinate standing up",
+					"Mnemonic": "You need a fishing license to walk to the river on your human legs and throw your baited worm in"
+				  },
+				  {
+					"WordSection": {
+					  "Kanji": "許",
+					  "KanjiImage": null,
+					  "Meaning": "allow",
+					  "Link": "http://www.kanjidamage.com許"
+					},
+					"Radicals": [
+					  {
+						"Kanji": "言",
+						"KanjiImage": null,
+						"Meaning": "say",
+						"Link": "http://www.kanjidamage.com//kanji/11-say-%E8%A8%80"
+					  },
+					  {
+						"Kanji": "午",
+						"KanjiImage": null,
+						"Meaning": "noon",
+						"Link": "http://www.kanjidamage.com//kanji/1192-noon-%E5%8D%88"
+					  }
+					],
+					"Onyomi": "KYO",
+					"Mnemonic": "Keep Your Opinions to yourself until I allow you to say them at noon"
+				  }
+				],
 				"Error": null
 			  }`,
 		},
 	}
 
-	// TODO: Replace lookups with testCases
-	// lookups := []string{
-	// 	"no results",
-	// 	"何",
-	// 	"兄弟",
-	// 	"路面電車停留場",
-	// 	"あったり前",
-	// 	"相変わらず",
-	// 	"ペラペラ",
-	// 	"driver's licence",
-	// }
-
-	log.Println("elo")
-	// expect: func(t *testing.T, res *server.TemplateParams) {
-	// 	b, _ := json.MarshalIndent(res, "", "  ")
-	// 	log.Println(string(b))
-	// 	t.Fail()
-	// },
-
-	kanjidmgLinks := make(map[string]string)
+	// "special case" (fill by hand) for creating english words kanjidmg lookup urls
+	kanjidmgLinkWords := []string{
+		"運転免許",
+	}
 	for _, tc := range testCases {
-		for _, r := range tc.word {
+		kanjidmgLinkWords = append(kanjidmgLinkWords, tc.word)
+	}
+	kanjidmgLinks := make(map[string]string)
+	for _, word := range kanjidmgLinkWords {
+		for _, r := range word {
 			if !jptext.IsKanji(r) {
 				continue
 			}
@@ -1020,33 +1107,33 @@ func TestServer(t *testing.T) {
 		return data
 	}
 
-	t.Run("generate JSONs", func(t *testing.T) {
-		for _, tc := range testCases {
-			t.Run(tc.word, func(t *testing.T) {
-				data := getData(t, tc)
+	// t.Run("generate JSONs", func(t *testing.T) {
+	// 	for _, tc := range testCases {
+	// 		t.Run(tc.word, func(t *testing.T) {
+	// 			data := getData(t, tc)
 
-				b, _ := json.MarshalIndent(data, "", "  ")
-				log.Println(string(b))
-				t.Fail()
-			})
-		}
-	})
+	// 			b, _ := json.MarshalIndent(data, "", "  ")
+	// 			log.Println(string(b))
+	// 			t.Fail()
+	// 		})
+	// 	}
+	// })
 
-	// for _, tc := range testCases {
-	// 	t.Run(tc.word, func(t *testing.T) {
-	// 		data := getData(t, tc)
+	for _, tc := range testCases {
+		t.Run(tc.word, func(t *testing.T) {
+			data := getData(t, tc)
 
-	// 		require.False(t, tc.expect == nil && tc.expectJSON == "", "No expects? You sure?")
+			require.False(t, tc.expect == nil && tc.expectJSON == "", "No expects? You sure?")
 
-	// 		if tc.expectJSON != "" {
-	// 			dataB, err := json.MarshalIndent(data, "", "  ")
-	// 			require.NoError(t, err)
-	// 			require.JSONEq(t, tc.expectJSON, string(dataB))
-	// 		}
+			if tc.expectJSON != "" {
+				dataB, err := json.MarshalIndent(data, "", "  ")
+				require.NoError(t, err)
+				require.JSONEq(t, tc.expectJSON, string(dataB))
+			}
 
-	// 		if tc.expect != nil {
-	// 			tc.expect(t, data)
-	// 		}
-	// 	})
-	// }
+			if tc.expect != nil {
+				tc.expect(t, data)
+			}
+		})
+	}
 }
