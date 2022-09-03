@@ -1,37 +1,37 @@
 #!/bin/sh
-set -e -o pipefail
-
-STAGED_GO_FILES=$(git diff --cached --name-only | grep ".go$" | grep -v "vendor" | grep -v ".idea" |  grep -v '.githooks')
-
-if [[ "$STAGED_GO_FILES" = "" ]]; then
-  exit 0
-fi
-
-
-GOIMPORTS=$(go env GOPATH)/bin/goimports
-
-# Check for goimports
-if [[ ! -x "$GOIMPORTS" ]]; then
-  printf "\t\033[41mPlease install goimports\033[0m (go get golang.org/x/tools/cmd/goimports)"
-  exit 1
-fi
-
-PASS=true
-
-for FILE in $STAGED_GO_FILES
-do
-  # Run goimports on the staged file
-  $GOIMPORTS -w $FILE
-  git add $FILE
-done
-
-go vet ./...
-
-if ! $PASS; then
-  printf "\033[0;30m\033[41mCOMMIT FAILED\033[0m\n"
-  exit 1
-else
-  printf "\033[0;30m\033[42mCOMMIT SUCCEEDED\033[0m\n"
-fi
-
-exit 0
+# set -e -o pipefail
+# 
+# STAGED_GO_FILES=$(git diff --cached --name-only | grep ".go$" | grep -v "vendor" | grep -v ".idea" |  grep -v '.githooks')
+# 
+# if [[ "$STAGED_GO_FILES" = "" ]]; then
+#   exit 0
+# fi
+# 
+# 
+# GOIMPORTS=$(go env GOPATH)/bin/goimports
+# 
+# # Check for goimports
+# if [[ ! -x "$GOIMPORTS" ]]; then
+#   printf "\t\033[41mPlease install goimports\033[0m (go get golang.org/x/tools/cmd/goimports)"
+#   exit 1
+# fi
+# 
+# PASS=true
+# 
+# for FILE in $STAGED_GO_FILES
+# do
+#   # Run goimports on the staged file
+#   $GOIMPORTS -w $FILE
+#   git add $FILE
+# done
+# 
+# go vet ./...
+# 
+# if ! $PASS; then
+#   printf "\033[0;30m\033[41mCOMMIT FAILED\033[0m\n"
+#   exit 1
+# else
+#   printf "\033[0;30m\033[42mCOMMIT SUCCEEDED\033[0m\n"
+# fi
+# 
+# exit 0
