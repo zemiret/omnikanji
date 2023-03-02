@@ -14,6 +14,8 @@ import (
 // TODO: Periodic refresh of kanjidmg list of kanjis (once every month is probably enough)
 
 func main() {
+	cfg := omnikanji.ParseEnvConfig()
+
 	idxTplPath, err := filepath.Abs("server/index.html")
 	if err != nil {
 		panic(err)
@@ -30,6 +32,6 @@ func main() {
 
 	jisho := dictproxy.NewJisho(omnikanji.JishoSearchUrl, httpClient)
 	kanjidmg := dictproxy.NewKanjidmg(kanjidmgLinks, httpClient)
-	srv := server.NewServer(indexTemplate, jisho, kanjidmg)
+	srv := server.NewServer(cfg, indexTemplate, jisho, kanjidmg)
 	srv.Start()
 }

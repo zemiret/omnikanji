@@ -2,10 +2,10 @@ package jptext
 
 const (
 	kanjiStartRange = 0x4e00
-	kanjiEndRange = 0x9faf
+	kanjiEndRange   = 0x9faf
 
 	jpStartRange = 0x3000
-	jpEndRange = 0x9faf
+	jpEndRange   = 0x9faf
 )
 
 func IsJapanese(c rune) bool {
@@ -42,4 +42,14 @@ func ExtractKanjis(word string) string {
 		}
 	}
 	return wordKanjis
+}
+
+func KanjisCountInAWord(word string) int {
+	kanjiCount := 0
+	for _, c := range word {
+		if IsKanji(c) {
+			kanjiCount++
+		}
+	}
+	return kanjiCount
 }

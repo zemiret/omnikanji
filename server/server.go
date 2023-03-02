@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
@@ -26,6 +27,7 @@ type KanjidmgSectionGetter interface {
 
 type server struct {
 	*logger.Logger
+	cfg           *omnikanji.Config
 	indexTemplate *template.Template
 	kanjidmgLinks map[string]string
 	jisho         JishoSectionGetter
@@ -40,8 +42,9 @@ type TemplateParams struct {
 	Error                *string
 }
 
-func NewServer(indexTemplate *template.Template, jisho JishoSectionGetter, kanjidmg KanjidmgSectionGetter) *server {
+func NewServer(cfg *omnikanji.Config, indexTemplate *template.Template, jisho JishoSectionGetter, kanjidmg KanjidmgSectionGetter) *server {
 	return &server{
+		cfg:           cfg,
 		indexTemplate: indexTemplate,
 		jisho:         jisho,
 		kanjidmg:      kanjidmg,
@@ -57,6 +60,10 @@ func (s *server) Start() {
 }
 
 func (s *server) HandleIndex(w http.ResponseWriter, r *http.Request) *TemplateParams {
+	if s.cfg.DebugMode {
+		s.Printf("Request for: %s", r.URL.Path)
+	}
+
 	if strings.HasPrefix(r.URL.Path, "/search/") {
 		return s.handleSearch(w, r)
 	}
@@ -88,16 +95,12 @@ func (s *server) searchFromEnglish(word string) *TemplateParams {
 		return &TemplateParams{}
 	}
 
-	log.Println("Search from english")
-
 	var wordKanjis string
 	for _, c := range tParams.Jisho.WordSection.FullWord {
 		if jptext.IsKanji(c) {
 			wordKanjis += string(c)
 		}
 	}
-
-	log.Println("WOrd kanjis: ", wordKanjis)
 
 	if wordKanjis != "" {
 		s.doKanjidmgSearch(&tParams, wordKanjis)
@@ -184,6 +187,14 @@ func (s *server) renderTemplate(w http.ResponseWriter, data *TemplateParams) {
 func (s *server) renderWrapper(h TemplateDataGetHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := h(w, r)
+		if s.cfg.DebugMode {
+			tplDump, err := json.MarshalIndent(data, "", "  ")
+			if err != nil {
+				s.Printf("template dump err: %s", err)
+			} else {
+				s.Printf("Render template: %+s\n", string(tplDump))
+			}
+		}
 		s.renderTemplate(w, data)
 	}
 }

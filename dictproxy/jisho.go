@@ -41,7 +41,7 @@ func (h *Jisho) Get(word string) (*omnikanji.JishoSection, error) {
 	}
 	sect.Link = url
 
-	// There are some jisho words that do not split niceliy into parts. Faillback
+	// There are some jisho words that do not split niceliy into parts. Fallback
 	if sect.WordSection.FullWord == "" && jptext.IsJapaneseWord(word) {
 		sect.WordSection.FullWord = word
 	}
@@ -95,15 +95,36 @@ func (h *Jisho) parseWordParts(wordSection *goquery.Selection) (string, []omnika
 		furiganaInParts = append(furiganaInParts, el.Text())
 	})
 
-	kanjiCount := 0
-	for _, c := range fullWord {
-		if jptext.IsKanji(c) {
-			kanjiCount++
-		}
-	}
-	if kanjiCount != len(furiganaInParts) {
+	kanjisCountInWord := jptext.KanjisCountInAWord(fullWord)
+
+	// Some words on jisho use different html structure. Fallback for such cases
+	if len(furiganaInParts) != kanjisCountInWord {
 		// TODO: sth is messed up :/ Some fallback in such cases
-		return "", nil
+		// TODO: Try "ruby" parsing. If that still fails, return none
+		furiganaInParts = []string{}
+
+		furiganaRuby := wordSection.Find(".furigana ruby")
+		furiganaRbStr := furiganaRuby.Find("rb").Text()
+		furiganaRtStr := furiganaRuby.Find("rt").Text()
+
+		if len(furiganaRtStr) == 0 {
+			return fullWord, nil
+		}
+
+		// each kanji has 1 kana to it
+		if len(furiganaRbStr) == len(furiganaRtStr) {
+			//var wordParts []omnikanji.JishoWordPart
+			//for i, rbKanji := range furiganaRbStr {
+			//	//				rtReading :=
+			//}
+		} else {
+			// Dunno how I could figure out which kana belongs to which kanji
+			return fullWord, nil
+		}
+
+		if len(furiganaInParts) != kanjisCountInWord {
+			return fullWord, nil
+		}
 	}
 
 	var wordParts []omnikanji.JishoWordPart

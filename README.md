@@ -3,7 +3,7 @@ DONE * fix omnikanji radicals
 DONE * reverse lookup (eng -> japanese)
 DONE * better furigana HTML (html ruby tag)
 DONE * tests. It really be easier having them I think (maybe a few e2e will do for all)
-* yahari (in kana) - wrong jisho parsing, both at "prod", and this version. The problem is that jisho sometimes provides us with ruby, and sometimes with spans per each kanji-furigana.
+* yahari (in kana) and yahari in kanji - wrong jisho parsing, both at "prod", and this version. The problem is that jisho sometimes provides us with ruby, and sometimes with spans per each kanji-furigana.
 * bigger search field (css)
 * cache'ing (simple, in-memory, sth like cache 1000 most hot results, maybe some jisho tags could be useful)
 * server panic recovery (when not in debug mode?) - probably some contact page to me
@@ -11,6 +11,7 @@ DONE * tests. It really be easier having them I think (maybe a few e2e will do f
 * some "buy me a cofee or sth"
 * public deploy (REMOVE PRIVATE DATA FROM compose)
 * license
+* make it more mobile friendly
 * more dictionaries?
 
 
@@ -21,6 +22,8 @@ Words for testing:
 あったり前
 相変わらず
 ペラペラ
+TODO: やはり
+TODO: 矢張り
 driver's licence
 
 # Testing

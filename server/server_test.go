@@ -1077,7 +1077,61 @@ func TestServer(t *testing.T) {
 				"Jisho": {
 				  "Link": "https://jisho.org/search/やはり",
 				  "WordSection": {
-					"FullWord": "やはり",
+					"FullWord": "矢張り",
+					"Parts": null,
+					"Meanings": [
+					  {
+						"ListIdx": 1,
+						"Meaning": "as expected; sure enough; just as one thought",
+						"Tags": "Adverb (fukushi)"
+					  },
+					  {
+						"ListIdx": 2,
+						"Meaning": "after all (is said and done); in the end; as one would expect; in any case",
+						"Tags": "Adverb (fukushi)"
+					  },
+					  {
+						"ListIdx": 3,
+						"Meaning": "too; also; as well; likewise; (not) either",
+						"Tags": "Adverb (fukushi)"
+					  },
+					  {
+						"ListIdx": 4,
+						"Meaning": "still; as before",
+						"Tags": "Adverb (fukushi)"
+					  },
+					  {
+						"ListIdx": 5,
+						"Meaning": "all the same; even so; still; nonetheless",
+						"Tags": "Adverb (fukushi)"
+					  },
+					  {
+						"ListIdx": 6,
+						"Meaning": "矢張 【やはり】",
+						"Tags": "Other forms"
+					  },
+					  {
+						"ListIdx": 7,
+						"Meaning": "",
+						"Tags": "Notes"
+					  }
+					]
+				  },
+				  "Kanjis": [ "notemptyarrayIExpect" ]
+				},
+				"Kanjidmg": null,
+				"Error": null
+			  }`,
+		},
+		{
+			word: "矢張り",
+			expectJSON: `{
+				"EnglishSearchedWord": "",
+				"JishoEnglishWordLink": "",
+				"Jisho": {
+				  "Link": "https://jisho.org/search/やはり",
+				  "WordSection": {
+					"FullWord": "矢張り",
 					"Parts": null,
 					"Meanings": [
 					  {
